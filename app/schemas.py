@@ -130,3 +130,6 @@ class OrgInviteRequest(BaseModel):
 # ── Notifications ────────────────────────────────────────────────────────────
 class NotificationMarkReadRequest(BaseModel):
     notification_id: str
+    class CurrencyAnalysisRequest(BaseModel):
+    image_base64: str
+    language: str = "en"
