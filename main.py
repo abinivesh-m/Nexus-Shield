@@ -42,7 +42,7 @@ from app.routers import (
     auth_router, profile_router, history_router, reports_router,
     analysis_router, family_router, org_router, admin_router,
     intel_router, notifications_router, dashboard_router,
-    report_pdf_router, integrations_router,
+    report_pdf_router, integrations_router, currency_router,
 )
 
 app = FastAPI(title="NexusShield API", version="2.0.0")
@@ -78,6 +78,35 @@ app.include_router(intel_router.router)
 app.include_router(notifications_router.router)
 app.include_router(dashboard_router.router)
 app.include_router(integrations_router.router)
+app.include_router(currency_router.router)
+
+
+@app.get("/")
+async def root():
+    """Root endpoint — API info and available endpoints."""
+    return {
+        "status": "online",
+        "service": "NexusShield API",
+        "version": "2.0.0",
+        "message": "NexusShield — AI-powered scam detection and threat intelligence",
+        "docs": "/docs",
+        "openapi": "/openapi.json",
+        "endpoints": {
+            "auth": "/auth/*",
+            "profile": "/profile/*",
+            "history": "/history/*",
+            "reports": "/reports/*",
+            "analysis": "/analyze/*",
+            "family": "/family/*",
+            "organization": "/org/*",
+            "admin": "/admin/*",
+            "intelligence": "/intel/*",
+            "notifications": "/notifications/*",
+            "dashboard": "/dashboard/*",
+            "integrations": "/integrations/*",
+        },
+        "health": "/health",
+    }
 
 
 @app.get("/health")
