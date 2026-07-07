@@ -130,7 +130,7 @@ class OrgInviteRequest(BaseModel):
 # ── Notifications ────────────────────────────────────────────────────────────
 class NotificationMarkReadRequest(BaseModel):
     notification_id: str
-    class CallAnalysisRequest(BaseModel):
+class CallAnalysisRequest(BaseModel):
     transcript: str
     caller_number: str = ""
     language: str = "en"
