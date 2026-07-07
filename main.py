@@ -18,6 +18,10 @@ Covers Phases 1-10 from the roadmap:
   /notifications/*  Phase 9 - Notifications
   /dashboard/*      Phase 4 & 10 - Dashboard + Personal Analytics
   /integrations/*   Phase 7 - External Integrations (Safe Browsing, VirusTotal, AbuseIPDB, HIBP)
+  /analyze/currency Counterfeit Currency Detection (Gemini Vision prototype)
+  /analyze/call     Digital Arrest / Scam Call Detection (transcript-based prototype)
+  /intel/hotspots   Geospatial Crime Intelligence (scam report map clusters)
+  /intel/fraud-network  Fraud Network Intelligence (linked-entity graph)
 
 Uses SQLite by default so the whole stack runs with zero external services.
 Set DATABASE_URL to point at Postgres for production (see app/database.py).
@@ -42,7 +46,7 @@ from app.routers import (
     auth_router, profile_router, history_router, reports_router,
     analysis_router, family_router, org_router, admin_router,
     intel_router, notifications_router, dashboard_router,
-    report_pdf_router, integrations_router, currency_router,
+    report_pdf_router, integrations_router, currency_router, call_router,
 )
 
 app = FastAPI(title="NexusShield API", version="2.0.0")
@@ -79,6 +83,7 @@ app.include_router(notifications_router.router)
 app.include_router(dashboard_router.router)
 app.include_router(integrations_router.router)
 app.include_router(currency_router.router)
+app.include_router(call_router.router)
 
 
 @app.get("/")
@@ -97,6 +102,8 @@ async def root():
             "history": "/history/*",
             "reports": "/reports/*",
             "analysis": "/analyze/*",
+            "currency": "/analyze/currency",
+            "call": "/analyze/call",
             "family": "/family/*",
             "organization": "/org/*",
             "admin": "/admin/*",
