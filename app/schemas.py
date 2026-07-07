@@ -96,6 +96,26 @@ class ScamReportRequest(BaseModel):
     description: str = ""
     category: str = "Uncategorized"
 
+    # Geospatial Crime Intelligence (optional)
+    latitude: float | None = None
+    longitude: float | None = None
+    city: str = ""
+
+    # Fraud Network Intelligence (optional)
+    device_id: str = ""
+    bank_account: str = ""
+
+
+class CurrencyAnalysisRequest(BaseModel):
+    image_base64: str
+    language: str = "en"
+
+
+class CallAnalysisRequest(BaseModel):
+    transcript: str
+    caller_number: str = ""
+    language: str = "en"
+
 
 class ReportReviewRequest(BaseModel):
     status: str  # verified | rejected
@@ -130,11 +150,3 @@ class OrgInviteRequest(BaseModel):
 # ── Notifications ────────────────────────────────────────────────────────────
 class NotificationMarkReadRequest(BaseModel):
     notification_id: str
-class CallAnalysisRequest(BaseModel):
-    transcript: str
-    caller_number: str = ""
-    language: str = "en"
-
-
-
-
