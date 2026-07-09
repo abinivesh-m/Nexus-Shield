@@ -39,6 +39,43 @@ NEWS_SEED = [
 ]
 
 
+SCAM_REPORTS_SEED = [
+    # Chennai cluster -- phone 8800123456 reused with two different UPI IDs
+    # and one shared device ID, so the fraud network graph has real edges.
+    {"category": "Digital Arrest Scam", "phone_number": "8800123456", "upi_id": "fastrefund@ybl",
+     "device_id": "dev-a13f", "description": "Caller posed as CBI officer demanding money on video call.",
+     "city": "Chennai", "latitude": 13.0827, "longitude": 80.2707, "status": "verified"},
+    {"category": "UPI Fraud", "phone_number": "8800123456", "upi_id": "winprize@paytm",
+     "device_id": "dev-a13f", "description": "Same number later used a different UPI ID to collect a 'fee'.",
+     "city": "Chennai", "latitude": 13.0839, "longitude": 80.2718, "status": "verified"},
+    {"category": "Phishing", "website": "sbi-kyc-verify.xyz", "phone_number": "8800123456",
+     "description": "SMS with phishing link, followed up by a call from the same number.",
+     "city": "Chennai", "latitude": 13.0700, "longitude": 80.2600, "status": "pending"},
+    # Coimbatore cluster
+    {"category": "OTP Scam", "phone_number": "7000987654", "bank_account": "HDFC-XXXX4521",
+     "description": "Caller claiming to be bank support asked for OTP.",
+     "city": "Coimbatore", "latitude": 11.0168, "longitude": 76.9558, "status": "verified"},
+    {"category": "OTP Scam", "phone_number": "7000987654", "bank_account": "HDFC-XXXX4521",
+     "device_id": "dev-c88e", "description": "Second victim reports the same number and bank account.",
+     "city": "Coimbatore", "latitude": 11.0055, "longitude": 76.9661, "status": "verified"},
+    # Bengaluru cluster
+    {"category": "Investment Scam", "upi_id": "cryptoprofit@ok", "device_id": "dev-c88e",
+     "description": "Fake trading app WhatsApp group, withdrawals locked after deposit.",
+     "city": "Bengaluru", "latitude": 12.9716, "longitude": 77.5946, "status": "pending"},
+    {"category": "Job Scam", "phone_number": "9123456780",
+     "description": "Work-from-home offer requesting upfront registration fee.",
+     "city": "Bengaluru", "latitude": 12.9352, "longitude": 77.6245, "status": "pending"},
+    # Madurai
+    {"category": "Lottery Scam", "upi_id": "winprize@paytm",
+     "description": "SMS claiming a lottery win, asked to pay 'processing fee' via UPI.",
+     "city": "Madurai", "latitude": 9.9252, "longitude": 78.1198, "status": "verified"},
+    # Hyderabad
+    {"category": "Courier Scam", "website": "indiapost-tracking.info",
+     "description": "Fake customs-fee page for a parcel that was never sent.",
+     "city": "Hyderabad", "latitude": 17.3850, "longitude": 78.4867, "status": "pending"},
+]
+
+
 def seed_if_empty(db: DBSession):
     if db.query(models.ScamDatabaseEntry).count() == 0:
         for item in SCAM_DB_SEED:
@@ -53,7 +90,11 @@ def seed_if_empty(db: DBSession):
             db.add(models.NewsItem(**item, url=""))
 
     # Demo admin account so the admin panel is reachable out of the box.
-    if db.query(models.User).filter(models.User.email == "admin@nexusshield.app").first() is None:
+    # `admin` must always end up defined here (whether newly created or
+    # already existing) because it's used below as the reporter for seeded
+    # scam reports.
+    admin = db.query(models.User).filter(models.User.email == "admin@nexusshield.app").first()
+    if admin is None:
         from .auth import hash_password
         admin = models.User(
             email="admin@nexusshield.app",
@@ -63,5 +104,14 @@ def seed_if_empty(db: DBSession):
             is_email_verified=True,
         )
         db.add(admin)
+        db.commit()  # flush now so admin.id is populated before we reference it below
+
+    # Seed scam reports with location + linkable identifiers so the Hotspot
+    # Map and Fraud Network Graph have real data to show in a demo instead
+    # of an empty screen. Phone/UPI/device/bank identifiers deliberately
+    # overlap across a few reports to produce a connected graph.
+    if db.query(models.ScamReport).count() == 0:
+        for item in SCAM_REPORTS_SEED:
+            db.add(models.ScamReport(reporter_id=admin.id, **item))
 
     db.commit()
