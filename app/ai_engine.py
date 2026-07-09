@@ -76,28 +76,7 @@ Risk score guide:
 
 {lang_instruction}"""
 
-def _diagnose_empty_response(response) -> str:
-    """
-    When response.text is empty/missing, figure out *why* instead of masking
-    it behind a generic message.
-    """
-    try:
-        feedback = getattr(response, "prompt_feedback", None)
-        if feedback is not None and getattr(feedback, "block_reason", None):
-            return f"Gemini blocked this request before generating a response (reason: {feedback.block_reason})."
 
-        candidates = getattr(response, "candidates", None) or []
-        if not candidates:
-            return "Gemini returned no candidates for this request (likely blocked upstream)."
-
-        finish_reason = getattr(candidates[0], "finish_reason", None)
-        if finish_reason and str(finish_reason) not in ("STOP", "FinishReason.STOP", "1"):
-            return f"Gemini stopped generating early (finish_reason: {finish_reason}). This often means a safety filter triggered on the image/text content."
-
-        return "Gemini returned an empty or non-JSON response for an unknown reason."
-    except Exception as diag_error:
-        return f"Could not determine why the response was empty ({diag_error})."
-        
 def safe_parse_result(text: str) -> dict:
     """Extract JSON from Gemini response, handling markdown code blocks."""
     text = (text or "").strip()
@@ -233,9 +212,8 @@ def analyze_call_transcript(transcript: str, caller_number: str = "", language: 
             response_mime_type="application/json",
         ),
     )
-    if not response.text:
-        raise ValueError(_diagnose_empty_response(response))
     return safe_parse_result(response.text)
+
 
 CURRENCY_SYSTEM_PROMPT = """You are a currency authentication assistant helping build a
 hackathon PROTOTYPE for detecting potentially counterfeit Indian banknotes from a photo.
@@ -267,7 +245,8 @@ Give your best visual assessment even if you cannot be fully certain from a phot
 
 
 def safe_parse_currency_result(text: str) -> dict:
-    text = (text or "").strip()
+    raw_text = text or ""
+    text = raw_text.strip()
     if text.startswith("```"):
         text = text.split("```")[1]
         if text.startswith("json"):
@@ -275,6 +254,14 @@ def safe_parse_currency_result(text: str) -> dict:
     try:
         parsed = json.loads(text)
     except Exception:
+        # Log the raw model output so failures are diagnosable instead of
+        # silently collapsing to a generic message. Check server logs after
+        # a failed scan to see exactly what Gemini returned.
+        import logging
+        logging.getLogger("nexusshield.ai_engine").warning(
+            "Currency analysis: failed to parse Gemini response as JSON. Raw text: %r",
+            raw_text,
+        )
         return {
             "likely_genuine": False,
             "confidence_percent": 0,
@@ -288,6 +275,7 @@ def safe_parse_currency_result(text: str) -> dict:
 
 def analyze_currency_image(image_base64: str, language: str = "en") -> dict:
     import base64
+    import logging
     image_bytes = base64.b64decode(image_base64)
     response = client.models.generate_content(
         model=MODEL,
@@ -301,8 +289,19 @@ def analyze_currency_image(image_base64: str, language: str = "en") -> dict:
             response_mime_type="application/json",
         ),
     )
-    if not response.text:
-        raise ValueError(_diagnose_empty_response(response))
+
+    # If Gemini's safety filters blocked or truncated the response, response.text
+    # can be None/empty even though the call itself succeeded (no exception).
+    # Surface *why* here instead of only seeing a generic parse failure below.
+    candidates = getattr(response, "candidates", None) or []
+    if candidates:
+        finish_reason = getattr(candidates[0], "finish_reason", None)
+        if finish_reason and str(finish_reason) not in ("STOP", "FinishReason.STOP", "1"):
+            logging.getLogger("nexusshield.ai_engine").warning(
+                "Currency analysis: Gemini finished with reason=%s (likely blocked/truncated), "
+                "prompt_feedback=%r", finish_reason, getattr(response, "prompt_feedback", None),
+            )
+
     return safe_parse_currency_result(response.text)
 
 
