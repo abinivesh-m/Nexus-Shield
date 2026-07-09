@@ -60,7 +60,7 @@ def _result_from_db_match(match: dict) -> dict:
 
 
 @router.post("/analyze/screenshot")
-async def analyze_screenshot(
+def analyze_screenshot(
     req: schemas.ScreenshotRequest,
     user: models.User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
@@ -74,7 +74,7 @@ async def analyze_screenshot(
 
 
 @router.post("/analyze/text")
-async def analyze_text(
+def analyze_text(
     req: schemas.TextRequest,
     user: models.User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
@@ -95,7 +95,7 @@ async def analyze_text(
 
 
 @router.post("/analyze/url")
-async def analyze_url(
+def analyze_url(
     req: schemas.UrlRequest,
     user: models.User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
@@ -132,7 +132,7 @@ async def analyze_url(
 
 
 @router.post("/analyze/clipboard")
-async def analyze_clipboard(
+def analyze_clipboard(
     req: schemas.ClipboardCheckRequest,
     user: models.User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
