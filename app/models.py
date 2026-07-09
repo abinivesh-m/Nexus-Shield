@@ -123,6 +123,15 @@ class ScamReport(Base):
     description = Column(Text, default="")
     category = Column(String, default="Uncategorized")
 
+    # Geospatial Crime Intelligence — required by intel_router.py's /hotspots
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    city = Column(String, default="")
+
+    # Fraud Network Intelligence — required by intel_router.py's /fraud-network
+    device_id = Column(String, default="")
+    bank_account = Column(String, default="")
+
     status = Column(String, default="pending")  # pending | verified | rejected
     admin_notes = Column(Text, default="")
     reviewed_by = Column(String, default="")
