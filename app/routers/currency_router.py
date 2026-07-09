@@ -16,7 +16,7 @@ router = APIRouter(prefix="/analyze", tags=["currency"])
 
 
 @router.post("/currency")
-async def analyze_currency(
+def analyze_currency(
     req: schemas.CurrencyAnalysisRequest,
     user: models.User = Depends(get_current_user),
     db: DBSession = Depends(get_db),

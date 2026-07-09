@@ -21,7 +21,7 @@ router = APIRouter(tags=["call-analysis"])
 
 
 @router.post("/analyze/call")
-async def analyze_call(
+def analyze_call(
     req: schemas.CallAnalysisRequest,
     user: models.User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
