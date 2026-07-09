@@ -76,7 +76,28 @@ Risk score guide:
 
 {lang_instruction}"""
 
+def _diagnose_empty_response(response) -> str:
+    """
+    When response.text is empty/missing, figure out *why* instead of masking
+    it behind a generic message.
+    """
+    try:
+        feedback = getattr(response, "prompt_feedback", None)
+        if feedback is not None and getattr(feedback, "block_reason", None):
+            return f"Gemini blocked this request before generating a response (reason: {feedback.block_reason})."
 
+        candidates = getattr(response, "candidates", None) or []
+        if not candidates:
+            return "Gemini returned no candidates for this request (likely blocked upstream)."
+
+        finish_reason = getattr(candidates[0], "finish_reason", None)
+        if finish_reason and str(finish_reason) not in ("STOP", "FinishReason.STOP", "1"):
+            return f"Gemini stopped generating early (finish_reason: {finish_reason}). This often means a safety filter triggered on the image/text content."
+
+        return "Gemini returned an empty or non-JSON response for an unknown reason."
+    except Exception as diag_error:
+        return f"Could not determine why the response was empty ({diag_error})."
+        
 def safe_parse_result(text: str) -> dict:
     """Extract JSON from Gemini response, handling markdown code blocks."""
     text = (text or "").strip()
