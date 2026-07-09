@@ -285,8 +285,18 @@ def analyze_currency_image(image_base64: str, language: str = "en") -> dict:
         ],
         config=types.GenerateContentConfig(
             system_instruction=CURRENCY_SYSTEM_PROMPT,
-            max_output_tokens=500,
+            # Raised from 500: gemini-2.5-flash is a "thinking" model that
+            # spends part of max_output_tokens on internal reasoning before
+            # writing the visible answer. At 500, thinking alone consumed
+            # the whole budget (finish_reason=MAX_TOKENS), truncating the
+            # response mid-JSON (e.g. '{"likely_genuine":') and causing
+            # every scan to fall through to the parse-failure fallback.
+            max_output_tokens=2000,
             response_mime_type="application/json",
+            # This task is a direct visual read, not a reasoning-heavy task
+            # -- disable thinking so the full token budget goes to the
+            # actual JSON output instead of being silently consumed first.
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
         ),
     )
 
