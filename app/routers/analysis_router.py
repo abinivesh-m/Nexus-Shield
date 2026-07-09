@@ -174,7 +174,7 @@ def get_categories():
 
 
 @router.post("/copilot/chat")
-async def copilot_chat(req: schemas.ChatRequest, user: models.User = Depends(get_current_user)):
+def copilot_chat(req: schemas.ChatRequest, user: models.User = Depends(get_current_user)):
     try:
         reply = ai_engine.copilot_reply(req.message, req.history, req.language)
         return {"reply": reply}
