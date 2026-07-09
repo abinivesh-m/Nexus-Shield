@@ -8,6 +8,7 @@ Builds on the original prototype's prompt design and extends it with:
 """
 import os
 import json
+import logging
 from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
@@ -16,6 +17,8 @@ from google.genai import types
 # Safety net if this module is imported before main.py's load_dotenv() runs.
 # backend/.env is two directories up from backend/app/ai_engine.py.
 load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
+
+logger = logging.getLogger("nexusshield.ai_engine")
 
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", ""))
 
@@ -44,6 +47,16 @@ Investment Scam, Romance Scam, Courier Scam, Lottery Scam.
 
 Always respond in a helpful, clear tone. Be direct about risks.
 When analyzing, always output ONLY valid JSON in the exact schema requested."""
+
+# gemini-2.5-flash is a "thinking" model: part of max_output_tokens is spent
+# on internal reasoning before it writes the visible answer. If the budget
+# is too low, thinking alone can consume it all (finish_reason=MAX_TOKENS),
+# truncating the response mid-JSON and causing every scan to silently fall
+# through to the generic parse-failure fallback below. Every analysis call
+# in this file disables thinking (thinking_budget=0) for these direct
+# classification tasks and uses a generous token budget, matching the fix
+# already applied to analyze_currency_image.
+NO_THINKING = types.ThinkingConfig(thinking_budget=0)
 
 
 def build_analysis_prompt(content_desc: str, language: str = "en") -> str:
@@ -77,9 +90,25 @@ Risk score guide:
 {lang_instruction}"""
 
 
-def safe_parse_result(text: str) -> dict:
+def _log_finish_reason(response, context: str):
+    """Surfaces *why* a response came back empty/truncated (safety block,
+    MAX_TOKENS, etc) instead of only seeing a generic parse failure later.
+    Check server logs after a failed scan to see the real cause."""
+    candidates = getattr(response, "candidates", None) or []
+    if candidates:
+        finish_reason = getattr(candidates[0], "finish_reason", None)
+        if finish_reason and str(finish_reason) not in ("STOP", "FinishReason.STOP", "1"):
+            logger.warning(
+                "%s: Gemini finished with reason=%s (likely blocked/truncated), "
+                "prompt_feedback=%r", context, finish_reason,
+                getattr(response, "prompt_feedback", None),
+            )
+
+
+def safe_parse_result(text: str, context: str = "analysis") -> dict:
     """Extract JSON from Gemini response, handling markdown code blocks."""
-    text = (text or "").strip()
+    raw_text = text or ""
+    text = raw_text.strip()
     if text.startswith("```"):
         text = text.split("```")[1]
         if text.startswith("json"):
@@ -87,6 +116,10 @@ def safe_parse_result(text: str) -> dict:
     try:
         parsed = json.loads(text)
     except Exception:
+        logger.warning(
+            "%s: failed to parse Gemini response as JSON. Raw text: %r",
+            context, raw_text,
+        )
         return {
             "risk_score": 50,
             "scam_type": "Unknown",
@@ -120,11 +153,13 @@ def analyze_image(image_base64: str, language: str = "en") -> dict:
         ],
         config=types.GenerateContentConfig(
             system_instruction=SYSTEM_PROMPT,
-            max_output_tokens=900,
+            max_output_tokens=2000,
             response_mime_type="application/json",
+            thinking_config=NO_THINKING,
         ),
     )
-    return safe_parse_result(response.text)
+    _log_finish_reason(response, "Screenshot analysis")
+    return safe_parse_result(response.text, "Screenshot analysis")
 
 
 def analyze_text_content(text: str, language: str = "en") -> dict:
@@ -133,11 +168,13 @@ def analyze_text_content(text: str, language: str = "en") -> dict:
         contents=build_analysis_prompt(f'"{text}"', language),
         config=types.GenerateContentConfig(
             system_instruction=SYSTEM_PROMPT,
-            max_output_tokens=700,
+            max_output_tokens=1500,
             response_mime_type="application/json",
+            thinking_config=NO_THINKING,
         ),
     )
-    return safe_parse_result(response.text)
+    _log_finish_reason(response, "Text analysis")
+    return safe_parse_result(response.text, "Text analysis")
 
 
 def analyze_url_content(url_context: str, language: str = "en") -> dict:
@@ -146,11 +183,13 @@ def analyze_url_content(url_context: str, language: str = "en") -> dict:
         contents=build_analysis_prompt(url_context, language),
         config=types.GenerateContentConfig(
             system_instruction=SYSTEM_PROMPT,
-            max_output_tokens=700,
+            max_output_tokens=1500,
             response_mime_type="application/json",
+            thinking_config=NO_THINKING,
         ),
     )
-    return safe_parse_result(response.text)
+    _log_finish_reason(response, "URL analysis")
+    return safe_parse_result(response.text, "URL analysis")
 
 
 CALL_SYSTEM_PROMPT = """You are NexusShield AI, an expert in detecting phone-based scams in India,
@@ -208,11 +247,13 @@ def analyze_call_transcript(transcript: str, caller_number: str = "", language: 
         contents=build_call_prompt(transcript, caller_number, language),
         config=types.GenerateContentConfig(
             system_instruction=CALL_SYSTEM_PROMPT,
-            max_output_tokens=800,
+            max_output_tokens=1800,
             response_mime_type="application/json",
+            thinking_config=NO_THINKING,
         ),
     )
-    return safe_parse_result(response.text)
+    _log_finish_reason(response, "Call transcript analysis")
+    return safe_parse_result(response.text, "Call transcript analysis")
 
 
 CURRENCY_SYSTEM_PROMPT = """You are a currency authentication assistant helping build a
@@ -257,8 +298,7 @@ def safe_parse_currency_result(text: str) -> dict:
         # Log the raw model output so failures are diagnosable instead of
         # silently collapsing to a generic message. Check server logs after
         # a failed scan to see exactly what Gemini returned.
-        import logging
-        logging.getLogger("nexusshield.ai_engine").warning(
+        logger.warning(
             "Currency analysis: failed to parse Gemini response as JSON. Raw text: %r",
             raw_text,
         )
@@ -275,7 +315,6 @@ def safe_parse_currency_result(text: str) -> dict:
 
 def analyze_currency_image(image_base64: str, language: str = "en") -> dict:
     import base64
-    import logging
     image_bytes = base64.b64decode(image_base64)
     response = client.models.generate_content(
         model=MODEL,
@@ -296,22 +335,10 @@ def analyze_currency_image(image_base64: str, language: str = "en") -> dict:
             # This task is a direct visual read, not a reasoning-heavy task
             # -- disable thinking so the full token budget goes to the
             # actual JSON output instead of being silently consumed first.
-            thinking_config=types.ThinkingConfig(thinking_budget=0),
+            thinking_config=NO_THINKING,
         ),
     )
-
-    # If Gemini's safety filters blocked or truncated the response, response.text
-    # can be None/empty even though the call itself succeeded (no exception).
-    # Surface *why* here instead of only seeing a generic parse failure below.
-    candidates = getattr(response, "candidates", None) or []
-    if candidates:
-        finish_reason = getattr(candidates[0], "finish_reason", None)
-        if finish_reason and str(finish_reason) not in ("STOP", "FinishReason.STOP", "1"):
-            logging.getLogger("nexusshield.ai_engine").warning(
-                "Currency analysis: Gemini finished with reason=%s (likely blocked/truncated), "
-                "prompt_feedback=%r", finish_reason, getattr(response, "prompt_feedback", None),
-            )
-
+    _log_finish_reason(response, "Currency analysis")
     return safe_parse_currency_result(response.text)
 
 
@@ -342,7 +369,9 @@ For the copilot chat mode:
         contents=contents,
         config=types.GenerateContentConfig(
             system_instruction=copilot_system,
-            max_output_tokens=700,
+            max_output_tokens=1200,
+            thinking_config=NO_THINKING,
         ),
     )
-    return response.text
+    _log_finish_reason(response, "Copilot chat")
+    return response.text or "Sorry, I couldn't generate a response. Please try again."
