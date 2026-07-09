@@ -233,8 +233,9 @@ def analyze_call_transcript(transcript: str, caller_number: str = "", language: 
             response_mime_type="application/json",
         ),
     )
+    if not response.text:
+        raise ValueError(_diagnose_empty_response(response))
     return safe_parse_result(response.text)
-
 
 CURRENCY_SYSTEM_PROMPT = """You are a currency authentication assistant helping build a
 hackathon PROTOTYPE for detecting potentially counterfeit Indian banknotes from a photo.
@@ -300,6 +301,8 @@ def analyze_currency_image(image_base64: str, language: str = "en") -> dict:
             response_mime_type="application/json",
         ),
     )
+    if not response.text:
+        raise ValueError(_diagnose_empty_response(response))
     return safe_parse_currency_result(response.text)
 
 
