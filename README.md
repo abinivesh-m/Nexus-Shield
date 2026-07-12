@@ -119,7 +119,7 @@ NexusShield
 ## Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/NexusShield.git
+git clone https://github.com/abinivesh-m/Nexus-Shield.git
 cd NexusShield
 ```
 
