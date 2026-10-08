@@ -16,13 +16,22 @@ if _DATABASE_URL.startswith("postgres://"):
 if not _DATABASE_URL:
     # Local dev — use SQLite next to main.py
     import pathlib
-    _db_path = pathlib.Path(__file__).resolve().parent.parent / "nexusshield.db"
+    if os.environ.get("VERCEL"):
+        # Vercel's filesystem is read-only except /tmp (and /tmp is wiped
+        # between cold starts) -- set DATABASE_URL to Postgres for real data.
+        _db_path = pathlib.Path("/tmp") / "nexusshield.db"
+    else:
+        _db_path = pathlib.Path(__file__).resolve().parent.parent / "nexusshield.db"
     _DATABASE_URL = f"sqlite:///{_db_path}"
     _connect_args = {"check_same_thread": False}
 else:
     _connect_args = {}
 
-engine = create_engine(_DATABASE_URL, connect_args=_connect_args)
+engine = create_engine(
+    _DATABASE_URL,
+    connect_args=_connect_args,
+    pool_pre_ping=True,  # serverless instances sit idle; drop stale connections
+)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 Base = declarative_base()
 

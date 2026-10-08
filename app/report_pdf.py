@@ -16,8 +16,10 @@ from reportlab.lib import colors
 
 from . import models
 
-REPORTS_DIR = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "data", "generated_reports"
+REPORTS_DIR = (
+    "/tmp/generated_reports" if os.environ.get("VERCEL") else os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "data", "generated_reports"
+    )
 )
 os.makedirs(REPORTS_DIR, exist_ok=True)
 
