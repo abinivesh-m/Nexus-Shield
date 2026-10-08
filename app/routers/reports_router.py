@@ -12,8 +12,10 @@ from ..deps import get_current_user
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
-UPLOAD_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "report_screenshots"
+UPLOAD_DIR = (
+    "/tmp/report_screenshots" if os.environ.get("VERCEL") else os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "report_screenshots"
+    )
 )
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
