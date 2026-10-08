@@ -1,8 +1,8 @@
 """
 Phase 1 — Authentication.
 
-Email/password, Google/Apple OAuth (token-verification stubbed — wire in
-google-auth / Apple's JWKS verification once you have real client IDs),
+Email/password, Google/Apple OAuth (Firebase / Google ID tokens verified
+server-side in app/token_verify.py),
 forgot password, email verification, and session management via
 refresh tokens that can be individually revoked.
 """
@@ -18,6 +18,7 @@ from ..auth import (
     generate_refresh_token, generate_email_token,
 )
 from ..deps import get_current_user
+from ..token_verify import verify_signin_token, verification_required, TokenError
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -73,22 +74,37 @@ def oauth_login(req: schemas.OAuthLoginRequest, db: DBSession = Depends(get_db))
     """
     Google/Apple sign-in.
 
-    NOTE: this trusts the client-supplied id_token's claims directly, which
-    is fine for local demo use. In production, verify `id_token` server-side
-    against Google's tokeninfo endpoint or Apple's public JWKS before
-    trusting `email`/`name` — do not skip that step with real credentials.
+    `id_token` must be a Firebase ID token or a Google ID token. It is
+    verified against Google's public keys (see app/token_verify.py) and the
+    email/name come from the verified token, not from the request body.
+    Verification is only skipped for local dev when no Firebase/Google
+    settings are configured.
     """
     if req.provider not in ("google", "apple"):
         raise HTTPException(status_code=400, detail="Unsupported provider")
 
-    user = db.query(models.User).filter(models.User.email == req.email).first()
+    email, name, photo_url = req.email, req.name, req.photo_url
+    if verification_required():
+        try:
+            claims = verify_signin_token(req.id_token)
+        except TokenError as e:
+            raise HTTPException(status_code=401, detail=f"Invalid sign-in token: {e}")
+        email = claims.get("email")
+        if not email:
+            raise HTTPException(status_code=401, detail="Sign-in token has no email")
+        if claims.get("email_verified") is False:
+            raise HTTPException(status_code=401, detail="Email is not verified")
+        name = claims.get("name") or name
+        photo_url = claims.get("picture") or photo_url
+
+    user = db.query(models.User).filter(models.User.email == email).first()
     if not user:
         user = models.User(
-            email=req.email,
-            name=req.name or req.email.split("@")[0],
-            photo_url=req.photo_url,
+            email=email,
+            name=name or email.split("@")[0],
+            photo_url=photo_url,
             auth_provider=req.provider,
-            is_email_verified=True,  # OAuth providers verify email themselves
+            is_email_verified=True,  # verified by Google/Firebase
         )
         db.add(user)
         db.commit()
