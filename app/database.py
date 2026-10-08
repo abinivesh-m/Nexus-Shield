@@ -9,9 +9,13 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 _DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
-# Railway gives postgres:// but SQLAlchemy needs postgresql://
-if _DATABASE_URL.startswith("postgres://"):
-    _DATABASE_URL = _DATABASE_URL.replace("postgres://", "postgresql://", 1)
+# Railway gives postgres://, Neon gives postgresql://. SQLAlchemy 2.1+
+# defaults postgresql:// to psycopg v3, but we ship psycopg2-binary, so pin
+# the driver explicitly.
+for _prefix in ("postgres://", "postgresql://"):
+    if _DATABASE_URL.startswith(_prefix):
+        _DATABASE_URL = "postgresql+psycopg2://" + _DATABASE_URL[len(_prefix):]
+        break
 
 if not _DATABASE_URL:
     # Local dev — use SQLite next to main.py
