@@ -37,10 +37,15 @@ jobs:
         env:
           FLUTTER_NO_ANALYTICS: 'true'
           CI: 'true'
+        run: flutter build apk --release --target-platform android-arm64
+
+      - name: Inspect build output
+        if: always()
         run: |
-          flutter build apk --release --target-platform android-arm64
           echo "=== APK files ==="
-          find build -name "*.apk" 2>/dev/null
+          find . -name "*.apk" 2>/dev/null
+          echo "=== Build dir ==="
+          ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "no apk dir"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
