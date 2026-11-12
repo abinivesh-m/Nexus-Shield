@@ -8,29 +8,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/cirruslabs/flutter:stable
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.44.5'
-          channel: stable
 
       - name: Get dependencies
         run: flutter pub get
 
       - name: Build release APK
-        env:
-          FLUTTER_NO_ANALYTICS: 'true'
-          CI: 'true'
         run: flutter build apk --release
 
       - name: Find APK
@@ -38,8 +25,6 @@ jobs:
         run: |
           echo "=== APK files ==="
           find . -name "*.apk" 2>/dev/null || echo "NO APK FOUND"
-          echo "=== Build dir ==="
-          ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "no apk dir"
 
       - name: Upload APK artifact
         if: success()
