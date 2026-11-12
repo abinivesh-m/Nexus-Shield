@@ -1,0 +1,236 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+import '../main.dart';
+import '../services/api_service.dart';
+import '../widgets/risk_meter.dart';
+import '../widgets/lottie_result.dart';
+
+class UrlCheckerScreen extends StatefulWidget {
+  const UrlCheckerScreen({super.key});
+  @override
+  State<UrlCheckerScreen> createState() => _UrlCheckerScreenState();
+}
+
+class _UrlCheckerScreenState extends State<UrlCheckerScreen> {
+  final _ctrl = TextEditingController();
+  bool _checking = false;
+  AnalysisResult? _result;
+
+  final List<String> _suspiciousSamples = [
+    'http://sbi-kyc-update.xyz/verify',
+    'https://pm-yojana-claim.in/free-money',
+    'http://aadhaar-link-now.com/update',
+    'https://bit.ly/win-prize-now',
+  ];
+
+  Future<void> _check() async {
+    final url = _ctrl.text.trim();
+    if (url.isEmpty) return;
+    setState(() { _checking = true; _result = null; });
+    try {
+      final api = context.read<ApiService>();
+      final lang = api.currentUser?.language ?? 'en';
+      final result = await api.checkUrl(url.startsWith('http') ? url : 'https://$url', language: lang);
+      if (!mounted) return;
+      setState(() => _result = result);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(friendlyError(e)),
+        backgroundColor: AppColors.red,
+        behavior: SnackBarBehavior.floating,
+      ));
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('URL / Website Checker'), centerTitle: false),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Enter any suspicious link to detect phishing, fake government sites, or scam domains.',
+              style: GoogleFonts.inter(color: AppColors.textSec, fontSize: 13, height: 1.5),
+            ),
+            const SizedBox(height: 20),
+            _buildUrlInput(),
+            const SizedBox(height: 12),
+            _buildSamples(),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _checking ? null : _check,
+                icon: const Icon(Icons.search, size: 18),
+                label: const Text('Check URL'),
+                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+              ),
+            ),
+            if (_checking) ...[
+              const SizedBox(height: 24),
+              Center(
+                child: LottieResult(
+                  state: LottieState.scanning,
+                  message: '🔍 Scanning domain...',
+                ),
+              ).animate().fadeIn(),
+            ],
+            if (_result != null) ...[const SizedBox(height: 24), _buildResult()],
+            const SizedBox(height: 24),
+            _buildTips(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUrlInput() {
+    return TextField(
+      controller: _ctrl,
+      style: GoogleFonts.inter(color: AppColors.textPrim, fontSize: 14),
+      decoration: InputDecoration(
+        hintText: 'https://example.com or paste any link',
+        prefixIcon: const Icon(Icons.link, color: AppColors.textMuted, size: 20),
+        suffixIcon: _ctrl.text.isNotEmpty
+            ? IconButton(icon: const Icon(Icons.clear, size: 18, color: AppColors.textMuted), onPressed: () { _ctrl.clear(); setState(() { _result = null; }); })
+            : null,
+      ),
+      onChanged: (_) => setState(() {}),
+      onSubmitted: (_) => _check(),
+      keyboardType: TextInputType.url,
+    );
+  }
+
+  Widget _buildSamples() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: _suspiciousSamples.map((url) => GestureDetector(
+        onTap: () { _ctrl.text = url; setState(() {}); },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: AppColors.red.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.red.withValues(alpha: 0.2)),
+          ),
+          child: Text(url.length > 35 ? '${url.substring(0, 35)}...' : url,
+              style: GoogleFonts.inter(color: AppColors.red, fontSize: 10, fontWeight: FontWeight.w500)),
+        ),
+      )).toList(),
+    );
+  }
+
+  Widget _buildResult() {
+    final r = _result!;
+    final color = r.riskScore >= 75 ? AppColors.red : r.riskScore >= 40 ? AppColors.orange : AppColors.green;
+    final label = r.riskScore >= 75 ? 'DANGEROUS' : r.riskScore >= 40 ? 'SUSPICIOUS' : 'LIKELY SAFE';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: color.withValues(alpha: 0.5)),
+          ),
+          child: Row(
+            children: [
+              RiskMeter(score: r.riskScore, color: color),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(r.scamType, style: GoogleFonts.inter(color: AppColors.textPrim, fontWeight: FontWeight.w800, fontSize: 14)),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(99)),
+                      child: Text(label, style: GoogleFonts.inter(color: color, fontWeight: FontWeight.w800, fontSize: 10, letterSpacing: 0.4)),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(r.summary, style: GoogleFonts.inter(color: AppColors.textSec, fontSize: 12, height: 1.4)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ).animate().fadeIn(),
+        if (r.redFlags.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          ...r.redFlags.map((f) => Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.warning_amber_rounded, color: color, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(f.flag, style: GoogleFonts.inter(color: AppColors.textPrim, fontSize: 12, fontWeight: FontWeight.w600, height: 1.4)),
+                      if (f.detail.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(f.detail, style: GoogleFonts.inter(color: AppColors.textSec, fontSize: 12, height: 1.4)),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: AppColors.green.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.green.withValues(alpha: 0.25))),
+          child: Text(r.advice, style: GoogleFonts.inter(color: AppColors.textSec, fontSize: 13, height: 1.5)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTips() {
+    final tips = [
+      ('🚫', 'Never click links in unsolicited messages'),
+      ('🔍', 'Check if the domain ends with .gov.in for govt sites'),
+      ('🔒', 'Ensure HTTPS before entering any personal info'),
+      ('📵', 'When in doubt, do not proceed — call the official number'),
+    ];
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('🛡️ Safety Tips', style: GoogleFonts.inter(color: AppColors.textPrim, fontWeight: FontWeight.w700, fontSize: 14)),
+          const SizedBox(height: 10),
+          ...tips.map((t) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(t.$1, style: const TextStyle(fontSize: 14)),
+                const SizedBox(width: 8),
+                Expanded(child: Text(t.$2, style: GoogleFonts.inter(color: AppColors.textSec, fontSize: 12, height: 1.4))),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+}

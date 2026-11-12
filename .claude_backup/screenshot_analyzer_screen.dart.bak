@@ -1,0 +1,522 @@
+import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+
+import '../main.dart';
+import '../services/api_service.dart';
+import '../widgets/risk_meter.dart';
+
+class ScreenshotAnalyzerScreen extends StatefulWidget {
+  const ScreenshotAnalyzerScreen({super.key});
+  @override
+  State<ScreenshotAnalyzerScreen> createState() => _ScreenshotAnalyzerScreenState();
+}
+
+class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
+  Uint8List? _imageBytes;
+  String? _imageName;
+  bool _analyzing = false;
+  AnalysisResult? _result;
+  final _picker = ImagePicker();
+
+  Future<void> _pickImage(ImageSource source) async {
+    final picked = await _picker.pickImage(source: source, imageQuality: 85);
+    if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    if (!mounted) return;
+    setState(() {
+      _imageBytes = bytes;
+      _imageName = picked.name;
+      _result = null;
+    });
+  }
+
+  Future<void> _analyze() async {
+    if (_imageBytes == null) return;
+    setState(() => _analyzing = true);
+    try {
+      final api = context.read<ApiService>();
+      final lang = api.currentUser?.language ?? 'en';
+      final result = await api.analyzeScreenshot(_imageBytes!, language: lang);
+      if (!mounted) return;
+      setState(() => _result = result);
+    } catch (e) {
+      if (!mounted) return;
+      _showError(e.toString());
+    } finally {
+      if (mounted) setState(() => _analyzing = false);
+    }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: AppColors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Screenshot Analyzer'),
+        centerTitle: false,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSubtitle(),
+            const SizedBox(height: 20),
+            _buildUploadArea(),
+            if (_imageBytes != null) ...[
+              const SizedBox(height: 16),
+              _buildAnalyzeButton(),
+            ],
+            if (_analyzing) ...[
+              const SizedBox(height: 24),
+              _buildAnalyzingState(),
+            ],
+            if (_result != null) ...[
+              const SizedBox(height: 24),
+              _buildResultCard(),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubtitle() {
+    return Text(
+      'Upload a WhatsApp message, SMS, or any suspicious screenshot. Our AI will analyze it instantly.',
+      style: GoogleFonts.inter(
+        color: AppColors.textSec,
+        fontSize: 13,
+        height: 1.5,
+      ),
+    );
+  }
+
+  // ── Upload Area ────────────────────────────────────────────────────────
+  Widget _buildUploadArea() {
+    if (_imageBytes != null) {
+      return Stack(
+        children: [
+          Container(
+            width: double.infinity,
+            height: 220,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.red.withValues(alpha: 0.4), width: 1.5),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: Image.memory(_imageBytes!, fit: BoxFit.cover),
+            ),
+          ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: GestureDetector(
+              onTap: () => setState(() { _imageBytes = null; _imageName = null; _result = null; }),
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.7),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 16),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return GestureDetector(
+      onTap: () => _showSourcePicker(),
+      child: Container(
+        width: double.infinity,
+        height: 180,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.border,
+            width: 1.5,
+            strokeAlign: BorderSide.strokeAlignInside,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.red.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.upload_rounded, color: AppColors.red, size: 32),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Tap to Upload Screenshot',
+              style: GoogleFonts.inter(
+                color: AppColors.textPrim,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'WhatsApp, SMS, Email, Call — any screenshot',
+              style: GoogleFonts.inter(
+                color: AppColors.textMuted,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn().scale(begin: const Offset(0.97, 0.97));
+  }
+
+  void _showSourcePicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Choose Source',
+                style: GoogleFonts.inter(
+                  color: AppColors.textPrim,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _sourceOption(
+                Icons.photo_library_outlined,
+                'Upload from Gallery',
+                'Select a saved screenshot',
+                () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+              const SizedBox(height: 10),
+              _sourceOption(
+                Icons.camera_alt_outlined,
+                'Take a Photo',
+                'Capture the screen directly',
+                () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sourceOption(
+      IconData icon, String title, String subtitle, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface2,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: AppColors.red, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    color: AppColors.textPrim,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    color: AppColors.textSec,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            const Icon(Icons.chevron_right, color: AppColors.textMuted),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Analyze Button ─────────────────────────────────────────────────────
+  Widget _buildAnalyzeButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _analyzing ? null : _analyze,
+        icon: const Icon(Icons.auto_awesome, size: 18),
+        label: const Text('Analyze with AI'),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800),
+        ),
+      ),
+    ).animate().fadeIn().slideY(begin: 0.2, end: 0);
+  }
+
+  // ── Analyzing state ────────────────────────────────────────────────────
+  Widget _buildAnalyzingState() {
+    return Center(
+      child: Column(
+        children: [
+          const CircularProgressIndicator(
+            color: AppColors.red,
+            strokeWidth: 3,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '🤖 AI is analyzing the screenshot...',
+            style: GoogleFonts.inter(
+              color: AppColors.textSec,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Checking for scam patterns, red flags, and fraud indicators',
+            style: GoogleFonts.inter(
+              color: AppColors.textMuted,
+              fontSize: 12,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    ).animate().fadeIn();
+  }
+
+  // ── Result Card ────────────────────────────────────────────────────────
+  Widget _buildResultCard() {
+    final r = _result!;
+    final riskColor = r.riskScore >= 75
+        ? AppColors.red
+        : r.riskScore >= 40
+            ? AppColors.orange
+            : AppColors.green;
+    final riskLabel = r.riskScore >= 75
+        ? 'HIGH RISK'
+        : r.riskScore >= 40
+            ? 'MEDIUM RISK'
+            : 'LIKELY SAFE';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Risk score
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: riskColor.withValues(alpha: 0.4)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          r.scamType,
+                          style: GoogleFonts.inter(
+                            color: AppColors.textPrim,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: riskColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: Text(
+                            riskLabel,
+                            style: GoogleFonts.inter(
+                              color: riskColor,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  RiskMeter(score: r.riskScore, color: riskColor),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              const SizedBox(height: 16),
+              Text(
+                r.summary,
+                style: GoogleFonts.inter(
+                  color: AppColors.textSec,
+                  fontSize: 13,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ).animate().fadeIn().scale(begin: const Offset(0.95, 0.95)),
+
+        const SizedBox(height: 14),
+
+        // Red flags
+        if (r.redFlags.isNotEmpty) ...[
+          Text(
+            '🚩 Red Flags Detected',
+            style: GoogleFonts.inter(
+              color: AppColors.textPrim,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...r.redFlags.asMap().entries.map(
+            (e) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.red.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.red.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('⚠️ ', style: TextStyle(fontSize: 13)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          e.value.flag,
+                          style: GoogleFonts.inter(
+                            color: AppColors.textPrim,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            height: 1.4,
+                          ),
+                        ),
+                        if (e.value.detail.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            e.value.detail,
+                            style: GoogleFonts.inter(
+                              color: AppColors.textSec,
+                              fontSize: 12,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ).animate().fadeIn(delay: (80 * e.key).ms),
+          ),
+          const SizedBox(height: 14),
+        ],
+
+        // What to do
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.green.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.green.withValues(alpha: 0.25)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '✅ What You Should Do',
+                style: GoogleFonts.inter(
+                  color: AppColors.green,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                r.advice,
+                style: GoogleFonts.inter(
+                  color: AppColors.textSec,
+                  fontSize: 13,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ).animate().fadeIn(delay: 200.ms),
+      ],
+    );
+  }
+}

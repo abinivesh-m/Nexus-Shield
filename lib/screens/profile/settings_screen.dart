@@ -1,0 +1,171 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+import '../../main.dart' show AppColors, ThemeController;
+import '../../services/api_service.dart';
+
+const Map<String, String> kSupportedLanguages = {
+  'en': 'English', 'ta': 'Tamil', 'hi': 'Hindi', 'kn': 'Kannada', 'te': 'Telugu',
+};
+
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _updating = false;
+
+  Future<void> _patch(Map<String, dynamic> fields) async {
+    setState(() => _updating = true);
+    try {
+      await context.read<ApiService>().updateProfile(fields);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(friendlyError(e))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _updating = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = context.watch<ApiService>().currentUser;
+    final themeController = context.watch<ThemeController>();
+    if (user == null) return const SizedBox.shrink();
+
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      appBar: AppBar(title: const Text('Settings'), actions: [
+        if (_updating) const Padding(
+          padding: EdgeInsets.only(right: 16),
+          child: Center(child: SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.red))),
+        ),
+      ]),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _section('Appearance'),
+          _switchTile('Dark mode', 'Easier on the eyes in low light', themeController.isDark,
+              (v) => themeController.setDark(v)),
+          const SizedBox(height: 18),
+          _section('Language'),
+          Container(
+            decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+            child: Column(
+              children: kSupportedLanguages.entries.map((entry) {
+                return RadioListTile<String>(
+                  value: entry.key,
+                  groupValue: user.language,
+                  activeColor: AppColors.red,
+                  title: Text(entry.value, style: GoogleFonts.inter(color: AppColors.textPrim)),
+                  onChanged: (v) {
+                    if (v != null) _patch({'language': v});
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 18),
+          _section('Notifications'),
+          _switchTile('Push notifications', 'Get alerted about new scams in real time', user.notifPushEnabled,
+              (v) => _patch({'notif_push_enabled': v})),
+          _switchTile('Threat alerts', 'Regional scam warnings from the threat feed', user.notifThreatAlerts,
+              (v) => _patch({'notif_threat_alerts': v})),
+          _switchTile('Weekly summary', 'A recap of your scans and risk trends', user.notifWeeklySummary,
+              (v) => _patch({'notif_weekly_summary': v})),
+          const SizedBox(height: 18),
+          _section('Security'),
+          _switchTile('Biometric lock', 'Require Face/Touch ID to open the app', user.securityBiometricLock,
+              (v) => _patch({'security_biometric_lock': v})),
+          _switchTile('Clipboard monitor', 'Warn me when I copy a suspicious link, UPI ID, or wallet address',
+              user.securityAutoScanClipboard, (v) => _patch({'security_auto_scan_clipboard': v})),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(left: 4, top: 4),
+            child: Text(
+              'Clipboard checks run while NexusShield is open. Full background monitoring needs '
+              'a native Android service and runtime permission not included in this build.',
+              style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11.5),
+            ),
+          ),
+          const SizedBox(height: 24),
+          _DangerZone(),
+        ],
+      ),
+    );
+  }
+
+  Widget _section(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(label, style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+    );
+  }
+
+  Widget _switchTile(String title, String subtitle, bool value, ValueChanged<bool> onChanged) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+      child: SwitchListTile(
+        activeColor: AppColors.red,
+        title: Text(title, style: GoogleFonts.inter(color: AppColors.textPrim, fontWeight: FontWeight.w600, fontSize: 14)),
+        subtitle: Text(subtitle, style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12)),
+        value: value,
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+class _DangerZone extends StatefulWidget {
+  @override
+  State<_DangerZone> createState() => _DangerZoneState();
+}
+
+class _DangerZoneState extends State<_DangerZone> {
+  Future<void> _deleteAccount() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text('Delete account?', style: GoogleFonts.inter(color: AppColors.red, fontWeight: FontWeight.w700)),
+        content: Text('This permanently deletes your account, history, and reports. This cannot be undone.',
+            style: GoogleFonts.inter(color: AppColors.textSec)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true),
+              child: Text('Delete', style: GoogleFonts.inter(color: AppColors.red, fontWeight: FontWeight.w700))),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await context.read<ApiService>().deleteAccount();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.red.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.red.withValues(alpha: 0.3)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Danger zone', style: GoogleFonts.inter(color: AppColors.red, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 10),
+        OutlinedButton(
+          onPressed: _deleteAccount,
+          style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.red), foregroundColor: AppColors.red),
+          child: const Text('Delete my account'),
+        ),
+      ]),
+    );
+  }
+}
