@@ -21,11 +21,8 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
+          flutter-version: '3.44.5'
           channel: stable
-
-      - name: Clean build cache
-        run: flutter clean
 
       - name: Get dependencies
         run: flutter pub get
@@ -34,14 +31,13 @@ jobs:
         env:
           FLUTTER_NO_ANALYTICS: 'true'
           CI: 'true'
-        run: |
-          flutter build apk --release --no-pub --target-platform android-arm64
-          echo "=== APK files ==="
-          find . -name "*.apk" 2>/dev/null || echo "NO APK FOUND"
+        run: flutter build apk --release
 
-      - name: Inspect build output
+      - name: Find APK
         if: always()
         run: |
+          echo "=== APK files ==="
+          find . -name "*.apk" 2>/dev/null || echo "NO APK FOUND"
           echo "=== Build dir ==="
           ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "no apk dir"
 
