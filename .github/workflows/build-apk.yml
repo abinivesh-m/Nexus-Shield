@@ -21,11 +21,8 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.44.5'
+          flutter-version: '3.24.0'
           channel: stable
-
-      - name: Increase inotify limits (fix file watcher crash)
-        run: sudo sysctl -w fs.inotify.max_user_watches=524288 fs.inotify.max_user_instances=512
 
       - name: Clean build cache
         run: flutter clean
@@ -37,17 +34,19 @@ jobs:
         env:
           FLUTTER_NO_ANALYTICS: 'true'
           CI: 'true'
-        run: flutter build apk --release --target-platform android-arm64
+        run: |
+          flutter build apk --release --no-pub --target-platform android-arm64
+          echo "=== APK files ==="
+          find . -name "*.apk" 2>/dev/null || echo "NO APK FOUND"
 
       - name: Inspect build output
         if: always()
         run: |
-          echo "=== APK files ==="
-          find . -name "*.apk" 2>/dev/null
           echo "=== Build dir ==="
           ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "no apk dir"
 
       - name: Upload APK artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: nexusshield-release-apk
