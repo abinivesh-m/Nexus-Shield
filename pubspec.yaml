@@ -70,8 +70,5 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/
-    - assets/animations/
     - assets/icon/
     - assets/lottie/
-    - assets/data/
