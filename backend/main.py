@@ -1,0 +1,178 @@
+"""
+NexusShield FastAPI Backend — Production-shaped build.
+
+Run: uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+Covers Phases 1-10 from the roadmap:
+  /auth/*           Phase 1 - Authentication
+  /profile/*        Phase 1 - User Profile
+  /history/*        Phase 1 - Analysis History
+  /reports/*        Phase 1 & 6 - Scam Reporting + PDF reports
+  /analyze/*        Phase 1.5 & 2 - Live Scam DB + AI analysis + explanations
+  /copilot/*        AI Copilot chat
+  /categories       Phase 2 - Scam categories + supported languages
+  /family/*         Phase 5 - Family Protection
+  /org/*            Phase 5 - Enterprise/Organization Dashboard
+  /admin/*          Phase 5 - Admin Panel
+  /intel/*          Phase 4 - Threat Feed & News
+  /notifications/*  Phase 9 - Notifications
+  /dashboard/*      Phase 4 & 10 - Dashboard + Personal Analytics
+  /integrations/*   Phase 7 - External Integrations (Safe Browsing, VirusTotal, AbuseIPDB, HIBP)
+  /analyze/currency Counterfeit Currency Detection (Gemini Vision prototype)
+  /analyze/call     Digital Arrest / Scam Call Detection (transcript-based prototype)
+  /intel/hotspots   Geospatial Crime Intelligence (scam report map clusters)
+  /intel/fraud-network  Fraud Network Intelligence (linked-entity graph)
+
+Uses SQLite by default so the whole stack runs with zero external services.
+Set DATABASE_URL to point at Postgres for production (see app/database.py).
+"""
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Anchor to this file's directory rather than relying on the process's
+# current working directory -- uvicorn's --reload spawns a subprocess that
+# can start from a different cwd (notably on Windows), which silently makes
+# a cwd-relative load_dotenv() find nothing.
+load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env")
+
+import time
+from collections import defaultdict, deque
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse
+
+from app.database import init_db, SessionLocal
+from app.seed_data import seed_if_empty
+
+from app.routers import (
+    auth_router, profile_router, history_router, reports_router,
+    analysis_router, family_router, org_router, admin_router,
+    intel_router, notifications_router, dashboard_router,
+    report_pdf_router, integrations_router, currency_router, call_router,
+    internship_router,
+)
+
+app = FastAPI(title="NexusShield API", version="2.0.0")
+
+
+# ── Simple per-IP rate limiter (in-memory) ───────────────────────────────
+# 60 requests / 60s per IP. Prevents quota exhaustion and abuse.
+_RATE_LIMIT = 60
+_RATE_WINDOW = 60
+_rate_buckets: dict[str, deque] = defaultdict(deque)
+
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Skip rate limiting for health checks
+        if request.url.path in ("/", "/health"):
+            return await call_next(request)
+        client_ip = request.client.host if request.client else "unknown"
+        now = time.time()
+        bucket = _rate_buckets[client_ip]
+        while bucket and now - bucket[0] > _RATE_WINDOW:
+            bucket.popleft()
+        if len(bucket) >= _RATE_LIMIT:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Too many requests. Please slow down and try again in a minute."},
+            )
+        bucket.append(now)
+        response = await call_next(request)
+        return response
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
+
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
+
+# CORS: restrict to known frontends only (no wildcard in production).
+_ALLOWED_ORIGINS = [
+    "https://nexus-shield-iota.vercel.app",
+    "http://localhost:8000",
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
+    "http://10.0.2.2:8000",
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+)
+
+
+@app.on_event("startup")
+def on_startup():
+    init_db()
+    db = SessionLocal()
+    try:
+        seed_if_empty(db)
+    finally:
+        db.close()
+
+
+app.include_router(auth_router.router)
+app.include_router(profile_router.router)
+app.include_router(history_router.router)
+app.include_router(reports_router.router)
+app.include_router(report_pdf_router.router)
+app.include_router(analysis_router.router)
+app.include_router(family_router.router)
+app.include_router(org_router.router)
+app.include_router(admin_router.router)
+app.include_router(intel_router.router)
+app.include_router(notifications_router.router)
+app.include_router(dashboard_router.router)
+app.include_router(integrations_router.router)
+app.include_router(currency_router.router)
+app.include_router(call_router.router)
+app.include_router(internship_router.router)
+
+
+@app.get("/")
+async def root():
+    """Root endpoint — API info and available endpoints."""
+    return {
+        "status": "online",
+        "service": "NexusShield API",
+        "version": "2.0.0",
+        "message": "NexusShield — AI-powered scam detection and threat intelligence",
+        "docs": "/docs",
+        "openapi": "/openapi.json",
+        "endpoints": {
+            "auth": "/auth/*",
+            "profile": "/profile/*",
+            "history": "/history/*",
+            "reports": "/reports/*",
+            "analysis": "/analyze/*",
+            "currency": "/analyze/currency",
+            "call": "/analyze/call",
+            "family": "/family/*",
+            "organization": "/org/*",
+            "admin": "/admin/*",
+            "intelligence": "/intel/*",
+            "notifications": "/notifications/*",
+            "dashboard": "/dashboard/*",
+            "integrations": "/integrations/*",
+        },
+        "health": "/health",
+    }
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok", "service": "NexusShield API", "version": "2.0.0"}

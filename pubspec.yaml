@@ -1,0 +1,77 @@
+name: nexusshield
+description: AI-Powered Scam Detection Platform for India
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '^3.12.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI
+  google_fonts: ^6.1.0
+  flutter_animate: ^4.3.0
+
+  # State management
+  provider: ^6.1.1
+
+  # HTTP & API
+  http: ^1.2.0
+  dio: ^5.4.0
+
+  # Local persistence
+  shared_preferences: ^2.2.2
+
+  # Image picking
+  image_picker: ^1.0.7
+
+  # File handling
+  path_provider: ^2.1.2
+
+  # Charts
+  fl_chart: ^0.66.2
+
+  # Maps & Heatmap (required by hotspot_map_screen.dart)
+  # Using flutter_map + OpenStreetMap tiles instead of Google Maps --
+  # no API key, no billing account, no card required.
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
+  # Google Sign-In
+  google_sign_in: ^6.2.1
+  firebase_core: ^3.3.0
+
+  # Utils
+  url_launcher: ^6.2.4
+  share_plus: ^7.2.2
+  shimmer: ^3.0.0
+  lottie: ^3.1.0
+
+  # Biometric authentication
+  local_auth: ^2.3.0
+  smooth_page_indicator: ^1.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#0D1117"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  min_sdk_android: 21
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/animations/
+    - assets/icon/
+    - assets/lottie/
+    - assets/data/

@@ -1,0 +1,250 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+
+import '../../main.dart' show AppColors;
+import '../../services/api_service.dart';
+import 'signup_screen.dart';
+import 'forgot_password_screen.dart';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  bool _obscure = true;
+  bool _loading = false;
+  String? _error;
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      await context.read<ApiService>().login(_emailCtrl.text.trim(), _passwordCtrl.text);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = friendlyError(e));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  // Web client ID from Firebase's auto-generated google-services.json
+  // (oauth_client entry with client_type: 3). This is required as
+  // serverClientId even for Android-only sign-in, because it's what makes
+  // Google issue an idToken your backend can actually verify -- without it
+  // you only get an accessToken, which isn't suitable for server-side auth.
+  static const _googleServerClientId =
+      '125320737051-qrrj7nr0navstmq6jfsc9c89l0apehe5.apps.googleusercontent.com';
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: _googleServerClientId,
+    scopes: ['email', 'profile'],
+  );
+
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        // User cancelled the picker -- not an error, just stop quietly.
+        setState(() => _loading = false);
+        return;
+      }
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null) {
+        throw Exception(
+          'Google did not return an ID token. Check that the Web client ID '
+          'is set as serverClientId and matches the one in google-services.json.',
+        );
+      }
+      await context.read<ApiService>().oauthLogin(
+            provider: 'google',
+            idToken: idToken,
+            email: account.email,
+            name: account.displayName ?? '',
+            photoUrl: account.photoUrl ?? '',
+          );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = friendlyError(e));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _oauthPlaceholder(String provider) async {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        '$provider sign-in is not wired up yet on this platform.',
+      ),
+      backgroundColor: AppColors.surface2,
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 40),
+                  Container(
+                    width: 72, height: 72,
+                    decoration: BoxDecoration(
+                      color: AppColors.red.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(Icons.shield, color: AppColors.red, size: 38),
+                  ),
+                  const SizedBox(height: 20),
+                  Text('Welcome back', style: GoogleFonts.inter(
+                    color: AppColors.textPrim, fontSize: 26, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 6),
+                  Text('Sign in to keep your scans and history in sync',
+                      style: GoogleFonts.inter(color: AppColors.textSec, fontSize: 14)),
+                  const SizedBox(height: 32),
+                  if (_error != null) _buildError(_error!),
+                  TextFormField(
+                    controller: _emailCtrl,
+                    style: const TextStyle(color: AppColors.textPrim),
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Email', labelStyle: TextStyle(color: AppColors.textSec),
+                      prefixIcon: Icon(Icons.email_outlined, color: AppColors.textMuted),
+                    ),
+                    validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _passwordCtrl,
+                    obscureText: _obscure,
+                    style: const TextStyle(color: AppColors.textPrim),
+                    decoration: InputDecoration(
+                      labelText: 'Password', labelStyle: const TextStyle(color: AppColors.textSec),
+                      prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textMuted),
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                            color: AppColors.textMuted),
+                        onPressed: () => setState(() => _obscure = !_obscure),
+                      ),
+                    ),
+                    validator: (v) => (v == null || v.length < 8) ? 'Password must be 8+ characters' : null,
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
+                      child: Text('Forgot password?',
+                          style: GoogleFonts.inter(color: AppColors.orange, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: _loading ? null : _submit,
+                    style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                    child: _loading
+                        ? const SizedBox(height: 20, width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                        : const Text('Sign In'),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(children: [
+                    const Expanded(child: Divider(color: AppColors.border)),
+                    Padding(padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Text('or continue with', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12))),
+                    const Expanded(child: Divider(color: AppColors.border)),
+                  ]),
+                  const SizedBox(height: 18),
+                  Row(children: [
+                    Expanded(child: _OAuthButton(
+                      label: 'Google', icon: Icons.g_mobiledata_rounded,
+                      onTap: _loading ? () {} : _signInWithGoogle,
+                    )),
+                    const SizedBox(width: 12),
+                    Expanded(child: _OAuthButton(
+                      label: 'Apple', icon: Icons.apple,
+                      onTap: () => _oauthPlaceholder('Apple'),
+                    )),
+                  ]),
+                  const SizedBox(height: 28),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("Don't have an account?", style: GoogleFonts.inter(color: AppColors.textSec)),
+                      TextButton(
+                        onPressed: () => Navigator.push(context,
+                            MaterialPageRoute(builder: (_) => const SignupScreen())),
+                        child: Text('Sign up', style: GoogleFonts.inter(color: AppColors.red, fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildError(String msg) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.red.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.red.withValues(alpha: 0.3)),
+      ),
+      child: Row(children: [
+        const Icon(Icons.error_outline, color: AppColors.red, size: 18),
+        const SizedBox(width: 8),
+        Expanded(child: Text(msg, style: GoogleFonts.inter(color: AppColors.red, fontSize: 13))),
+      ]),
+    );
+  }
+}
+
+class _OAuthButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  const _OAuthButton({required this.label, required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, color: AppColors.textPrim, size: 22),
+      label: Text(label, style: GoogleFonts.inter(color: AppColors.textPrim, fontWeight: FontWeight.w600)),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(48),
+        side: const BorderSide(color: AppColors.border),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+}
