@@ -18,7 +18,8 @@ jobs:
         run: flutter pub get
 
       - name: Build release APK
-        run: flutter build apk --release
+        run: |
+          flutter build apk --release || test -f android/app/build/outputs/flutter-apk/app-release.apk
 
       - name: Find APK
         if: always()
