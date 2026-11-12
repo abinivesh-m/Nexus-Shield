@@ -10,8 +10,8 @@
 4. Railway auto-detects Python and deploys it
 5. Go to your service → "Variables" tab → Add:
    ```
-   GEMINI_API_KEY = ***REMOVED-SECRET***
-   JWT_SECRET     = ***REMOVED-SECRET***
+   GEMINI_API_KEY = <your-gemini-api-key>
+   JWT_SECRET     = <your-jwt-secret>
    DATABASE_URL   = (Railway auto-fills this if you add a PostgreSQL plugin)
    ```
 6. Go to "Settings" → "Networking" → "Generate Domain"
