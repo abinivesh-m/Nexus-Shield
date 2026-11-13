@@ -194,7 +194,7 @@ class _HotspotMapScreenState extends State<HotspotMapScreen> {
                 if (_loading)
                   Container(
                     color: AppColors.bg.withValues(alpha: 0.6),
-                    child: const Center(child: CircularProgressIndicator(color: AppColors.red)),
+                    child: const Center(child: CircularProgressIndicator(color: AppColors.brand)),
                   ),
                 if (_error != null)
                   Positioned(
@@ -204,10 +204,10 @@ class _HotspotMapScreenState extends State<HotspotMapScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.red.withValues(alpha: 0.4)),
+                        border: Border.all(color: AppColors.brand.withValues(alpha: 0.4)),
                       ),
                       child: Text('Could not load hotspots: $_error',
-                          style: GoogleFonts.inter(color: AppColors.red, fontSize: 12)),
+                          style: GoogleFonts.inter(color: AppColors.brand, fontSize: 12)),
                     ),
                   ),
                 Positioned(
@@ -278,7 +278,7 @@ class _HotspotMapScreenState extends State<HotspotMapScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? AppColors.red : Colors.transparent,
+          color: selected ? AppColors.brand : Colors.transparent,
           borderRadius: BorderRadius.circular(99),
         ),
         child: Row(
@@ -321,9 +321,9 @@ class _HotspotMapScreenState extends State<HotspotMapScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: selected ? AppColors.red : AppColors.surface,
+                color: selected ? AppColors.brand : AppColors.surface,
                 borderRadius: BorderRadius.circular(99),
-                border: Border.all(color: selected ? AppColors.red : AppColors.border),
+                border: Border.all(color: selected ? AppColors.brand : AppColors.border),
               ),
               alignment: Alignment.center,
               child: Text(

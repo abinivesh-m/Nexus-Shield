@@ -37,7 +37,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
         title: const Text('Scam Reporting'),
         bottom: TabBar(
           controller: _tab,
-          indicatorColor: AppColors.red,
+          indicatorColor: AppColors.brand,
           labelColor: AppColors.textPrim,
           unselectedLabelColor: AppColors.textMuted,
           tabs: const [Tab(text: 'Submit a Report'), Tab(text: 'My Reports')],
@@ -245,7 +245,7 @@ class _MyReportsTabState extends State<_MyReportsTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator(color: AppColors.red));
+    if (_loading) return const Center(child: CircularProgressIndicator(color: AppColors.brand));
     if (_reports == null || _reports!.isEmpty) {
       return Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -258,7 +258,7 @@ class _MyReportsTabState extends State<_MyReportsTab> {
 
     return RefreshIndicator(
       onRefresh: _load,
-      color: AppColors.red,
+      color: AppColors.brand,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _reports!.length,

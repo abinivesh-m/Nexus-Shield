@@ -88,14 +88,14 @@ class _FamilyScreenState extends State<FamilyScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(title: const Text('Family Protection')),
       floatingActionButton: FloatingActionButton(
-        onPressed: _invite, backgroundColor: AppColors.red,
+        onPressed: _invite, backgroundColor: AppColors.brand,
         child: const Icon(Icons.person_add_outlined),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.red))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.brand))
           : RefreshIndicator(
               onRefresh: _load,
-              color: AppColors.red,
+              color: AppColors.brand,
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
                 children: [

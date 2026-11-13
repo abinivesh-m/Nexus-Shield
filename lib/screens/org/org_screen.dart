@@ -92,7 +92,7 @@ class _OrgScreenState extends State<OrgScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(backgroundColor: AppColors.bg, body: Center(child: CircularProgressIndicator(color: AppColors.red)));
+      return const Scaffold(backgroundColor: AppColors.bg, body: Center(child: CircularProgressIndicator(color: AppColors.brand)));
     }
 
     if (!_hasOrg) {
@@ -129,7 +129,7 @@ class _OrgScreenState extends State<OrgScreen> {
       ]),
       body: RefreshIndicator(
         onRefresh: _load,
-        color: AppColors.red,
+        color: AppColors.brand,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [

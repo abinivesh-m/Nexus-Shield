@@ -74,7 +74,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           TextButton(onPressed: () => Navigator.pop(ctx, true),
-              child: Text('Clear', style: GoogleFonts.inter(color: AppColors.red, fontWeight: FontWeight.w700))),
+              child: Text('Clear', style: GoogleFonts.inter(color: AppColors.brand, fontWeight: FontWeight.w700))),
         ],
       ),
     );
@@ -102,7 +102,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Color _riskColor(int score) {
-    if (score >= 80) return AppColors.red;
+    if (score >= 80) return AppColors.brand;
     if (score >= 60) return AppColors.orange;
     if (score >= 31) return AppColors.yellow;
     return AppColors.green;
@@ -149,7 +149,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildBody() {
-    if (_loading) return const Center(child: CircularProgressIndicator(color: AppColors.red));
+    if (_loading) return const Center(child: CircularProgressIndicator(color: AppColors.brand));
     if (_error != null) {
       return Center(
         child: Padding(
@@ -189,7 +189,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return RefreshIndicator(
       onRefresh: _load,
-      color: AppColors.red,
+      color: AppColors.brand,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
@@ -214,7 +214,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(color: AppColors.red.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(color: AppColors.brand.withValues(alpha: 0.8), borderRadius: BorderRadius.circular(16)),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       onDismissed: (_) => _delete(item.id),
@@ -248,8 +248,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   if (item.matchedKnownScam)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: AppColors.red.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-                      child: Text('DB MATCH', style: GoogleFonts.inter(color: AppColors.red, fontSize: 9, fontWeight: FontWeight.w800)),
+                      decoration: BoxDecoration(color: AppColors.brand.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                      child: Text('DB MATCH', style: GoogleFonts.inter(color: AppColors.brand, fontSize: 9, fontWeight: FontWeight.w800)),
                     ),
                 ]),
                 const SizedBox(height: 3),

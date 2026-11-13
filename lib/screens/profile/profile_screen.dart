@@ -22,7 +22,7 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           TextButton(onPressed: () => Navigator.pop(ctx, true),
-              child: Text('Sign out', style: GoogleFonts.inter(color: AppColors.red, fontWeight: FontWeight.w700))),
+              child: Text('Sign out', style: GoogleFonts.inter(color: AppColors.brand, fontWeight: FontWeight.w700))),
         ],
       ),
     );
@@ -50,12 +50,12 @@ class ProfileScreen extends StatelessWidget {
             child: Row(children: [
               CircleAvatar(
                 radius: 30,
-                backgroundColor: AppColors.red.withValues(alpha: 0.15),
+                backgroundColor: AppColors.brand.withValues(alpha: 0.15),
                 backgroundImage: (user?.photoUrl.isNotEmpty ?? false) ? NetworkImage(user!.photoUrl) : null,
                 child: (user?.photoUrl.isEmpty ?? true)
                     ? Text(
                         (user?.name.isNotEmpty ?? false) ? user!.name[0].toUpperCase() : '?',
-                        style: GoogleFonts.inter(color: AppColors.red, fontWeight: FontWeight.w800, fontSize: 22),
+                        style: GoogleFonts.inter(color: AppColors.brand, fontWeight: FontWeight.w800, fontSize: 22),
                       )
                     : null,
               ),
@@ -98,8 +98,8 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 16),
           _sectionLabel('Account'),
           ListTile(
-            leading: const Icon(Icons.logout, color: AppColors.red),
-            title: Text('Sign out', style: GoogleFonts.inter(color: AppColors.red, fontWeight: FontWeight.w600)),
+            leading: const Icon(Icons.logout, color: AppColors.brand),
+            title: Text('Sign out', style: GoogleFonts.inter(color: AppColors.brand, fontWeight: FontWeight.w600)),
             onTap: () => _logout(context),
           ),
         ],

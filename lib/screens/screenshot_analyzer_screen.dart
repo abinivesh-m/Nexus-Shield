@@ -55,7 +55,7 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: AppColors.red,
+        backgroundColor: AppColors.brand,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
@@ -116,7 +116,7 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
             height: 220,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.red.withValues(alpha: 0.4), width: 1.5),
+              border: Border.all(color: AppColors.brand.withValues(alpha: 0.4), width: 1.5),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(15),
@@ -185,10 +185,10 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.red.withValues(alpha: 0.1),
+                color: AppColors.brand.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.upload_rounded, color: AppColors.red, size: 32),
+              child: const Icon(Icons.upload_rounded, color: AppColors.brand, size: 32),
             ),
             const SizedBox(height: 12),
             Text(
@@ -287,10 +287,10 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.red.withValues(alpha: 0.1),
+                color: AppColors.brand.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: AppColors.red, size: 22),
+              child: Icon(icon, color: AppColors.brand, size: 22),
             ),
             const SizedBox(width: 14),
             Column(
@@ -343,7 +343,7 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
       child: Column(
         children: [
           const CircularProgressIndicator(
-            color: AppColors.red,
+            color: AppColors.brand,
             strokeWidth: 3,
           ),
           const SizedBox(height: 16),
@@ -466,9 +466,9 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.red.withValues(alpha: 0.07),
+                color: AppColors.brand.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.red.withValues(alpha: 0.2)),
+                border: Border.all(color: AppColors.brand.withValues(alpha: 0.2)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -45,12 +45,12 @@ class DashboardScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.red.withValues(alpha: 0.12), AppColors.orange.withValues(alpha: 0.08)],
+          colors: [AppColors.brand.withValues(alpha: 0.12), AppColors.orange.withValues(alpha: 0.08)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.red.withValues(alpha: 0.2)),
+        border: Border.all(color: AppColors.brand.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -61,7 +61,7 @@ class DashboardScreen extends StatelessWidget {
                 Text(
                   '₹11,269 Crore',
                   style: GoogleFonts.inter(
-                    color: AppColors.red,
+                    color: AppColors.brand,
                     fontWeight: FontWeight.w900,
                     fontSize: 22,
                   ),
@@ -248,7 +248,7 @@ class DashboardScreen extends StatelessWidget {
               BarChartRodData(
                 toY: e.value,
                 gradient: const LinearGradient(
-                  colors: [AppColors.red, AppColors.orange],
+                  colors: [AppColors.brand, AppColors.orange],
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                 ),
@@ -308,7 +308,7 @@ class DashboardScreen extends StatelessWidget {
                     LinearProgressIndicator(
                       value: s.$3,
                       backgroundColor: AppColors.border,
-                      color: AppColors.red,
+                      color: AppColors.brand,
                       minHeight: 4,
                       borderRadius: BorderRadius.circular(2),
                     ),

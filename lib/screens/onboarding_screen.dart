@@ -19,7 +19,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   static const _pages = [
     _OnboardPage(
       icon: Icons.shield_rounded,
-      iconColor: AppColors.red,
+      iconColor: AppColors.brand,
       title: 'Stay protected\nfrom scams',
       subtitle:
           'India loses over ₹1.25 lakh crore to scams every year.\nNexusShield uses AI to protect you in real time.',
@@ -105,7 +105,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       controller: _controller,
                       count: _pages.length,
                       effect: ExpandingDotsEffect(
-                        activeDotColor: AppColors.red,
+                        activeDotColor: AppColors.brand,
                         dotColor: Colors.white.withValues(alpha: 0.14),
                         dotHeight: 7,
                         dotWidth: 7,

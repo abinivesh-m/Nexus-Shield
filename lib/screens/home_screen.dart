@@ -171,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: 7,
                       height: 7,
                       decoration: const BoxDecoration(
-                          color: AppColors.red, shape: BoxShape.circle),
+                          color: AppColors.brand, shape: BoxShape.circle),
                     ),
                   ),
               ],
@@ -191,12 +191,12 @@ class _HomeScreenState extends State<HomeScreen> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF30121F), Color(0xFF1B1022), Color(0xFF0F1729)],
+          colors: [Color(0xFF0B3B3C), Color(0xFF0A2438), Color(0xFF0F1729)],
         ),
-        border: Border.all(color: AppColors.red.withValues(alpha: 0.24)),
+        border: Border.all(color: AppColors.brand.withValues(alpha: 0.24)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.red.withValues(alpha: 0.14),
+            color: AppColors.brand.withValues(alpha: 0.14),
             blurRadius: 34,
             offset: const Offset(0, 16),
           ),
@@ -366,7 +366,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ── Stats row ──────────────────────────────────────────────────────────
   Widget _buildStatsRow() {
     const stats = [
-      ('119', 'Contacts', AppColors.red, Icons.people_alt_outlined),
+      ('119', 'Contacts', AppColors.brand, Icons.people_alt_outlined),
       ('9', 'Countries', AppColors.blue, Icons.public_rounded),
       ('5', 'Scam types', AppColors.orange, Icons.warning_amber_rounded),
       ('24/7', 'AI guard', AppColors.green, Icons.bolt_rounded),
@@ -393,7 +393,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ── Action grid ────────────────────────────────────────────────────────
   Widget _buildActionGrid(BuildContext context) {
     final actions = [
-      (Icons.image_search_rounded, 'Screenshot', 'Analyzer', AppColors.red,
+      (Icons.image_search_rounded, 'Screenshot', 'Analyzer', AppColors.brand,
           'Upload WhatsApp / SMS'),
       (Icons.text_snippet_outlined, 'Message', 'Analyzer', AppColors.orange,
           'Paste suspicious text'),
@@ -401,7 +401,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'Spot fake websites'),
       (Icons.smart_toy_outlined, 'Scam', 'Copilot', AppColors.green,
           'Ask AI anything'),
-      (Icons.record_voice_over_outlined, 'Scam call', 'Detector', AppColors.red,
+      (Icons.record_voice_over_outlined, 'Scam call', 'Detector', AppColors.brand,
           'Analyze a transcript'),
       (Icons.currency_exchange_rounded, 'Currency', 'Scanner', AppColors.blue,
           'Spot counterfeit notes'),

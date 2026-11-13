@@ -51,7 +51,7 @@ class _CurrencyScannerScreenState extends State<CurrencyScannerScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: AppColors.red,
+        backgroundColor: AppColors.brand,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),

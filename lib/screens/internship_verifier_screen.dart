@@ -36,7 +36,7 @@ class _InternshipVerifierScreenState extends State<InternshipVerifierScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(friendlyError(e)),
-        backgroundColor: AppColors.red,
+        backgroundColor: AppColors.brand,
       ));
     } finally {
       if (mounted) setState(() => _analyzing = false);
@@ -94,7 +94,7 @@ class _InternshipVerifierScreenState extends State<InternshipVerifierScreen> {
             if (_analyzing) ...[
               const SizedBox(height: 24),
               Center(child: Column(children: [
-                const CircularProgressIndicator(color: AppColors.red),
+                const CircularProgressIndicator(color: AppColors.brand),
                 const SizedBox(height: 8),
                 Text('Searching company & verifying domains...', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11)),
               ])),
@@ -153,7 +153,7 @@ class _InternshipVerifierScreenState extends State<InternshipVerifierScreen> {
             return Container(
               margin: const EdgeInsets.only(bottom: 7),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-              decoration: BoxDecoration(color: AppColors.red.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.red.withValues(alpha: 0.2))),
+              decoration: BoxDecoration(color: AppColors.brand.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.brand.withValues(alpha: 0.2))),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(f['flag']?.toString() ?? '', style: GoogleFonts.inter(color: AppColors.textPrim, fontSize: 13, fontWeight: FontWeight.w600)),
                 if ((f['detail'] ?? '').toString().isNotEmpty)

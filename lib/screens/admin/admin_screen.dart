@@ -68,11 +68,11 @@ class _AnalyticsTabState extends State<_AnalyticsTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_data == null) return const Center(child: CircularProgressIndicator(color: AppColors.red));
+    if (_data == null) return const Center(child: CircularProgressIndicator(color: AppColors.brand));
     final categories = List<Map<String, dynamic>>.from(_data!['scans_by_category'] ?? []);
     return RefreshIndicator(
       onRefresh: _load,
-      color: AppColors.red,
+      color: AppColors.brand,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -152,13 +152,13 @@ class _ReportsReviewTabState extends State<_ReportsReviewTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_reports == null) return const Center(child: CircularProgressIndicator(color: AppColors.red));
+    if (_reports == null) return const Center(child: CircularProgressIndicator(color: AppColors.brand));
     if (_reports!.isEmpty) {
       return Center(child: Text('No pending reports', style: GoogleFonts.inter(color: AppColors.textMuted)));
     }
     return RefreshIndicator(
       onRefresh: _load,
-      color: AppColors.red,
+      color: AppColors.brand,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _reports!.length,
@@ -315,7 +315,7 @@ class _ScamDbTabState extends State<_ScamDbTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_entries == null) return const Center(child: CircularProgressIndicator(color: AppColors.red));
+    if (_entries == null) return const Center(child: CircularProgressIndicator(color: AppColors.brand));
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton(onPressed: _addEntry, backgroundColor: AppColors.orange, child: const Icon(Icons.add)),
@@ -323,7 +323,7 @@ class _ScamDbTabState extends State<_ScamDbTab> {
           ? Center(child: Text('Scam database is empty', style: GoogleFonts.inter(color: AppColors.textMuted)))
           : RefreshIndicator(
               onRefresh: _load,
-              color: AppColors.red,
+              color: AppColors.brand,
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: _entries!.length,
@@ -398,10 +398,10 @@ class _UsersTabState extends State<_UsersTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_users == null) return const Center(child: CircularProgressIndicator(color: AppColors.red));
+    if (_users == null) return const Center(child: CircularProgressIndicator(color: AppColors.brand));
     return RefreshIndicator(
       onRefresh: _load,
-      color: AppColors.red,
+      color: AppColors.brand,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _users!.length,

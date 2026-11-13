@@ -40,7 +40,7 @@ class _UrlCheckerScreenState extends State<UrlCheckerScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(friendlyError(e)),
-        backgroundColor: AppColors.red,
+        backgroundColor: AppColors.brand,
         behavior: SnackBarBehavior.floating,
       ));
     } finally {
@@ -119,12 +119,12 @@ class _UrlCheckerScreenState extends State<UrlCheckerScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: AppColors.red.withValues(alpha: 0.07),
+            color: AppColors.brand.withValues(alpha: 0.07),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.red.withValues(alpha: 0.2)),
+            border: Border.all(color: AppColors.brand.withValues(alpha: 0.2)),
           ),
           child: Text(url.length > 35 ? '${url.substring(0, 35)}...' : url,
-              style: GoogleFonts.inter(color: AppColors.red, fontSize: 10, fontWeight: FontWeight.w500)),
+              style: GoogleFonts.inter(color: AppColors.brand, fontSize: 10, fontWeight: FontWeight.w500)),
         ),
       )).toList(),
     );
