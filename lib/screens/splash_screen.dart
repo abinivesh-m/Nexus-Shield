@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../main.dart' show AppColors, AuthGate;
+import '../widgets/ui.dart';
 import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -13,68 +13,60 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeIn;
-  late Animation<double> _slideUp;
-  late Animation<double> _taglineFade;
+    with TickerProviderStateMixin {
+  late final AnimationController _enter;
+  late final AnimationController _pulse;
+
+  late final Animation<double> _logoScale;
+  late final Animation<double> _logoFade;
+  late final Animation<double> _textFade;
+  late final Animation<double> _taglineFade;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+
+    _enter = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    );
+      duration: const Duration(milliseconds: 1700),
+    )..forward();
 
-    _fadeIn = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-    );
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat();
 
-    _slideUp = Tween<double>(begin: 40, end: 0).animate(
+    _logoScale = Tween<double>(begin: 0.82, end: 1.0).animate(
       CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+        parent: _enter,
+        curve: const Interval(0.0, 0.62, curve: Curves.easeOutBack),
       ),
     );
-
+    _logoFade = CurvedAnimation(
+      parent: _enter,
+      curve: const Interval(0.0, 0.38, curve: Curves.easeOut),
+    );
+    _textFade = CurvedAnimation(
+      parent: _enter,
+      curve: const Interval(0.32, 0.72, curve: Curves.easeOut),
+    );
     _taglineFade = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.4, 0.8, curve: Curves.easeOut),
+      parent: _enter,
+      curve: const Interval(0.52, 0.92, curve: Curves.easeOut),
     );
 
-    _controller.forward();
-
-    // Navigate after animation
-    Future.delayed(const Duration(milliseconds: 3000), () async {
+    Future.delayed(const Duration(milliseconds: 2700), () async {
       if (!mounted) return;
       final prefs = await SharedPreferences.getInstance();
       final seen = prefs.getBool('onboarding_done') ?? false;
       if (!mounted) return;
-      if (!seen) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const OnboardingScreen(),
-            transitionsBuilder: (_, anim, __, child) =>
-                FadeTransition(opacity: anim, child: child),
-            transitionDuration: const Duration(milliseconds: 600),
-          ),
-        );
-        return;
-      }
-      // AuthGate reactively watches ApiService.isAuthenticated and shows
-      // LoginScreen or MainShell accordingly -- and keeps watching, so a
-      // successful login/signup from LoginScreen correctly routes forward
-      // instead of dead-ending (that dead-end was the original bug: this
-      // used to push straight to LoginScreen, which has no way to react
-      // to a later successful auth call).
+      final next = seen ? const AuthGate() : const OnboardingScreen();
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const AuthGate(),
+          pageBuilder: (_, __, ___) => next,
           transitionsBuilder: (_, anim, __, child) =>
               FadeTransition(opacity: anim, child: child),
-          transitionDuration: const Duration(milliseconds: 600),
+          transitionDuration: const Duration(milliseconds: 550),
         ),
       );
     });
@@ -82,7 +74,8 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _enter.dispose();
+    _pulse.dispose();
     super.dispose();
   }
 
@@ -90,99 +83,170 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: Center(
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Shield animation
-                Transform.translate(
-                  offset: Offset(0, _slideUp.value),
-                  child: Opacity(
-                    opacity: _fadeIn.value,
-                    child: SizedBox(
-                      width: 160,
-                      height: 160,
-                      child: Lottie.asset(
-                        'assets/lottie/shield_protect.json',
-                        repeat: true,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Icon(
-                          Icons.shield,
-                          color: AppColors.red,
-                          size: 100,
+      body: AuroraBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              const Spacer(flex: 3),
+              AnimatedBuilder(
+                animation: _enter,
+                builder: (context, _) {
+                  return Opacity(
+                    opacity: _logoFade.value,
+                    child: Transform.scale(
+                      scale: _logoScale.value,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          _Rings(pulse: _pulse),
+                          const BrandLogo(size: 116),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 34),
+              FadeTransition(
+                opacity: _textFade,
+                child: Column(
+                  children: [
+                    const BrandWordmark(size: 33, showMark: false),
+                    const SizedBox(height: 10),
+                    Text(
+                      'AI-Powered Scam Protection',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textSec,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 1.6,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 46),
+              FadeTransition(
+                opacity: _taglineFade,
+                child: _Loader(progress: _enter),
+              ),
+              const Spacer(flex: 4),
+              FadeTransition(
+                opacity: _taglineFade,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 22),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 5,
+                        height: 5,
+                        decoration: const BoxDecoration(
+                          color: AppColors.green,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      Text(
+                        'Built in India  ·  Protecting every conversation',
+                        style: GoogleFonts.inter(
+                          color: AppColors.textMuted,
+                          fontSize: 11,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Rings extends StatelessWidget {
+  final Animation<double> pulse;
+  const _Rings({required this.pulse});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: pulse,
+      builder: (_, __) {
+        final t = pulse.value;
+        return SizedBox(
+          width: 240,
+          height: 240,
+          child: Stack(
+            alignment: Alignment.center,
+            children: List.generate(3, (i) {
+              final p = (t + i / 3) % 1.0;
+              final size = 116 + 118 * p;
+              return Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.red.withValues(alpha: 0.22 * (1 - p)),
+                    width: 1.4,
+                  ),
+                ),
+              );
+            }),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _Loader extends StatelessWidget {
+  final Animation<double> progress;
+  const _Loader({required this.progress});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: progress,
+      builder: (_, __) {
+        return Column(
+          children: [
+            SizedBox(
+              width: 132,
+              height: 3,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(99),
+                child: Stack(
+                  children: [
+                    Container(color: Colors.white.withValues(alpha: 0.08)),
+                    FractionallySizedBox(
+                      widthFactor: progress.value.clamp(0.05, 1.0),
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          gradient: AppColors.brandGradient,
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                // App name
-                Transform.translate(
-                  offset: Offset(0, _slideUp.value),
-                  child: Opacity(
-                    opacity: _fadeIn.value,
-                    child: Text(
-                      'NexusShield',
-                      style: GoogleFonts.inter(
-                        color: AppColors.textPrim,
-                        fontSize: 36,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -1,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Tagline
-                Opacity(
-                  opacity: _taglineFade.value,
-                  child: Text(
-                    'AI-Powered Scam Protection',
-                    style: GoogleFonts.inter(
-                      color: AppColors.textSec,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 80),
-                // Loading dots
-                Opacity(
-                  opacity: _taglineFade.value,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(3, (i) {
-                      return AnimatedBuilder(
-                        animation: _controller,
-                        builder: (_, __) {
-                          final delay = i * 0.15;
-                          final t = ((_controller.value - delay) * 3)
-                              .clamp(0.0, 1.0);
-                          final opacity = (t < 0.5 ? t * 2 : (1 - t) * 2)
-                              .clamp(0.3, 1.0);
-                          return Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: AppColors.red.withValues(alpha: opacity),
-                              shape: BoxShape.circle,
-                            ),
-                          );
-                        },
-                      );
-                    }),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Starting secure session…',
+              style: GoogleFonts.inter(
+                color: AppColors.textMuted,
+                fontSize: 11,
+                letterSpacing: 0.4,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

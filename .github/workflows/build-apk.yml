@@ -10,27 +10,40 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/cirruslabs/flutter:stable
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Toolchain info
+        run: flutter --version
+
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Build release APK
-        run: |
-          flutter build apk --release || test -f android/app/build/outputs/flutter-apk/app-release.apk
+      - name: Static analysis
+        run: flutter analyze --no-fatal-infos
 
-      - name: Find APK
-        if: always()
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Collect APK
         run: |
-          echo "=== APK files ==="
-          find . -name "*.apk" 2>/dev/null || echo "NO APK FOUND"
+          set -e
+          mkdir -p dist
+          APK=$(find . -name "app-release.apk" -not -path "./dist/*" | head -n 1)
+          if [ -z "$APK" ]; then
+            echo "ERROR: no app-release.apk was produced"
+            find . -name "*.apk" || true
+            exit 1
+          fi
+          cp "$APK" dist/nexusshield-release.apk
+          ls -lh dist
 
       - name: Upload APK artifact
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: nexusshield-release-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
+          path: dist/nexusshield-release.apk
+          if-no-files-found: error
           retention-days: 30

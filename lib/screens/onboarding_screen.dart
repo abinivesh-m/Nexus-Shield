@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../main.dart' show AppColors, AuthGate;
+import '../widgets/ui.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -16,33 +16,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _controller = PageController();
   int _page = 0;
 
-  final _pages = const [
+  static const _pages = [
     _OnboardPage(
-      lottie: 'assets/lottie/shield_protect.json',
-      fallbackIcon: Icons.shield_outlined,
+      icon: Icons.shield_rounded,
       iconColor: AppColors.red,
-      title: 'Stay Protected\nFrom Scams',
+      title: 'Stay protected\nfrom scams',
       subtitle:
-          'India loses ₹1.25 lakh crore to scams every year.\nNexusShield uses AI to protect you in real time.',
-      badge: '🇮🇳 Made for India',
+          'India loses over ₹1.25 lakh crore to scams every year.\nNexusShield uses AI to protect you in real time.',
+      badge: '🇮🇳  Made for India',
     ),
     _OnboardPage(
-      lottie: 'assets/lottie/scanning.json',
-      fallbackIcon: Icons.manage_search_rounded,
+      icon: Icons.manage_search_rounded,
       iconColor: AppColors.blue,
-      title: 'Scan Anything\nInstantly',
+      title: 'Scan anything\ninstantly',
       subtitle:
           'Suspicious SMS? Fake website? Scam call?\nPaste it, screenshot it, or type it — AI analyzes in seconds.',
-      badge: '⚡ Powered by Gemini AI',
+      badge: '⚡  Powered by Gemini AI',
     ),
     _OnboardPage(
-      lottie: 'assets/lottie/success.json',
-      fallbackIcon: Icons.people_alt_outlined,
+      icon: Icons.family_restroom_rounded,
       iconColor: AppColors.green,
-      title: 'Protect Your\nEntire Family',
+      title: 'Protect your\nwhole family',
       subtitle:
           'Add family members and get alerts when they\nencounter scams. Community-powered protection.',
-      badge: '👨‍👩‍👧‍👦 Family Protection',
+      badge: '👨‍👩‍👧‍👦  Family protection',
     ),
   ];
 
@@ -68,110 +65,91 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isLast = _page == _pages.length - 1;
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Skip button
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 12, 20, 0),
-                child: TextButton(
-                  onPressed: _finish,
-                  child: Text(
-                    'Skip',
-                    style: GoogleFonts.inter(
-                      color: AppColors.textSec,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+      body: AuroraBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 10, 14, 0),
+                  child: TextButton(
+                    onPressed: _finish,
+                    child: Text(
+                      'Skip',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textSec,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-
-            // Pages
-            Expanded(
-              child: PageView.builder(
-                controller: _controller,
-                itemCount: _pages.length,
-                onPageChanged: (i) => setState(() => _page = i),
-                itemBuilder: (_, i) => _pages[i],
+              Expanded(
+                child: PageView.builder(
+                  controller: _controller,
+                  itemCount: _pages.length,
+                  onPageChanged: (i) => setState(() => _page = i),
+                  itemBuilder: (_, i) => _pages[i],
+                ),
               ),
-            ),
-
-            // Bottom section
-            Padding(
-              padding: const EdgeInsets.fromLTRB(28, 0, 28, 36),
-              child: Column(
-                children: [
-                  // Page indicator
-                  SmoothPageIndicator(
-                    controller: _controller,
-                    count: _pages.length,
-                    effect: ExpandingDotsEffect(
-                      activeDotColor: AppColors.red,
-                      dotColor: AppColors.border,
-                      dotHeight: 8,
-                      dotWidth: 8,
-                      expansionFactor: 3,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
+                child: Column(
+                  children: [
+                    SmoothPageIndicator(
+                      controller: _controller,
+                      count: _pages.length,
+                      effect: ExpandingDotsEffect(
+                        activeDotColor: AppColors.red,
+                        dotColor: Colors.white.withValues(alpha: 0.14),
+                        dotHeight: 7,
+                        dotWidth: 7,
+                        expansionFactor: 3.4,
+                        spacing: 6,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // CTA Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
+                    const SizedBox(height: 26),
+                    GradientButton(
+                      label: isLast ? 'Get protected — it\'s free' : 'Continue',
+                      icon: isLast
+                          ? Icons.shield_rounded
+                          : Icons.arrow_forward_rounded,
                       onPressed: () {
-                        if (_page < _pages.length - 1) {
+                        if (!isLast) {
                           _controller.nextPage(
-                            duration: const Duration(milliseconds: 400),
-                            curve: Curves.easeInOut,
+                            duration: const Duration(milliseconds: 380),
+                            curve: Curves.easeOutCubic,
                           );
                         } else {
                           _finish();
                         }
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.red,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        _page < _pages.length - 1
-                            ? 'Continue'
-                            : 'Get Protected — It\'s Free',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
                     ),
-                  ),
-
-                  if (_page == _pages.length - 1) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      'No credit card. No ads. Free forever.',
-                      style: GoogleFonts.inter(
-                        color: AppColors.textMuted,
-                        fontSize: 12,
+                    AnimatedOpacity(
+                      opacity: isLast ? 1 : 0,
+                      duration: const Duration(milliseconds: 250),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 14),
+                        child: Text(
+                          'No credit card. No ads. Free forever.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            color: AppColors.textMuted,
+                            fontSize: 11.5,
+                          ),
+                        ),
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -179,16 +157,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 }
 
 class _OnboardPage extends StatelessWidget {
-  final String lottie;
-  final IconData fallbackIcon;
+  final IconData icon;
   final Color iconColor;
   final String title;
   final String subtitle;
   final String badge;
 
   const _OnboardPage({
-    required this.lottie,
-    required this.fallbackIcon,
+    required this.icon,
     required this.iconColor,
     required this.title,
     required this.subtitle,
@@ -198,70 +174,72 @@ class _OnboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
+      padding: const EdgeInsets.symmetric(horizontal: 30),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Animation
-          SizedBox(
-            width: 220,
-            height: 220,
-            child: Lottie.asset(
-              lottie,
-              repeat: true,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => Icon(
-                fallbackIcon,
-                color: iconColor,
-                size: 100,
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // Badge
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            width: 168,
+            height: 168,
             decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(48),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  iconColor.withValues(alpha: 0.30),
+                  iconColor.withValues(alpha: 0.06),
+                ],
+              ),
+              border: Border.all(color: iconColor.withValues(alpha: 0.32)),
+              boxShadow: [
+                BoxShadow(
+                  color: iconColor.withValues(alpha: 0.28),
+                  blurRadius: 46,
+                  offset: const Offset(0, 18),
+                ),
+              ],
+            ),
+            child: Icon(icon, color: iconColor, size: 72),
+          ),
+          const SizedBox(height: 34),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(99),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
             ),
             child: Text(
               badge,
               style: GoogleFonts.inter(
                 color: AppColors.textSec,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
           const SizedBox(height: 20),
-
-          // Title
           Text(
             title,
+            textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               color: AppColors.textPrim,
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              height: 1.2,
-              letterSpacing: -0.5,
+              fontSize: 31,
+              fontWeight: FontWeight.w900,
+              height: 1.14,
+              letterSpacing: -1.0,
             ),
-            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
-
-          // Subtitle
+          const SizedBox(height: 14),
           Text(
             subtitle,
+            textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               color: AppColors.textSec,
-              fontSize: 15,
+              fontSize: 13.5,
               height: 1.6,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
