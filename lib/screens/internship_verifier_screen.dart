@@ -36,7 +36,7 @@ class _InternshipVerifierScreenState extends State<InternshipVerifierScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(friendlyError(e)),
-        backgroundColor: AppColors.brand,
+        backgroundColor: AppColors.red,
       ));
     } finally {
       if (mounted) setState(() => _analyzing = false);
