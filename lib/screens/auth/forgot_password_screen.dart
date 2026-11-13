@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -13,22 +14,24 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _emailCtrl = TextEditingController();
-  final _tokenCtrl = TextEditingController();
+  final _otpCtrl = TextEditingController();
   final _newPasswordCtrl = TextEditingController();
   bool _loading = false;
-  bool _sent = false;
-  String? _devToken; // shown only because no email provider is wired up yet
+  bool _otpSent = false;
+  String? _devOtp;
   String? _error;
   String? _success;
 
-  Future<void> _requestReset() async {
+  Future<void> _requestOtp() async {
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty) return;
     setState(() { _loading = true; _error = null; });
     try {
-      final token = await context.read<ApiService>().forgotPassword(_emailCtrl.text.trim());
+      final res = await context.read<ApiService>().requestOtp(email, 'reset');
       if (!mounted) return;
       setState(() {
-        _sent = true;
-        _devToken = token;
+        _otpSent = true;
+        _devOtp = res['dev_otp']?.toString();
       });
     } catch (e) {
       if (!mounted) return;
@@ -39,9 +42,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _resetPassword() async {
+    final otp = _otpCtrl.text.trim();
+    final pw = _newPasswordCtrl.text;
+    if (otp.length != 6 || pw.length < 8) {
+      setState(() => _error = 'Enter a 6-digit OTP and a password (min 8 chars).');
+      return;
+    }
     setState(() { _loading = true; _error = null; });
     try {
-      await context.read<ApiService>().resetPassword(_tokenCtrl.text.trim(), _newPasswordCtrl.text);
+      await context.read<ApiService>().resetPasswordOtp(_emailCtrl.text.trim(), otp, pw);
       if (!mounted) return;
       setState(() => _success = 'Password updated. You can sign in now.');
     } catch (e) {
@@ -50,6 +59,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _otpCtrl.dispose();
+    _newPasswordCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -65,8 +82,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             children: [
               if (_error != null) _banner(_error!, AppColors.red, Icons.error_outline),
               if (_success != null) _banner(_success!, AppColors.green, Icons.check_circle_outline),
-              if (!_sent) ...[
-                Text('Enter the email on your account and we will send a reset link.',
+              if (!_otpSent) ...[
+                Text('Enter your email and we will send a 6-digit reset code.',
                     style: GoogleFonts.inter(color: AppColors.textSec, fontSize: 14)),
                 const SizedBox(height: 20),
                 TextField(
@@ -80,15 +97,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: _loading ? null : _requestReset,
+                  onPressed: _loading ? null : _requestOtp,
                   style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
                   child: _loading
                       ? const SizedBox(height: 20, width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                      : const Text('Send reset link'),
+                      : const Text('Send reset code'),
                 ),
               ] else ...[
-                if (_devToken != null) ...[
+                if (_devOtp != null) ...[
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -97,21 +114,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       border: Border.all(color: AppColors.yellow.withValues(alpha: 0.3)),
                     ),
                     child: Text(
-                      'No email provider is configured yet, so here is your reset token directly '
-                      'for testing:\n\n$_devToken',
+                      'No email provider is configured yet, so here is your reset code directly '
+                      'for testing:\n\n$_devOtp',
                       style: GoogleFonts.inter(color: AppColors.yellow, fontSize: 12.5),
                     ),
                   ),
                   const SizedBox(height: 16),
                 ],
-                Text('Enter the token and your new password.',
+                Text('Enter the 6-digit code sent to your email and your new password.',
                     style: GoogleFonts.inter(color: AppColors.textSec, fontSize: 14)),
                 const SizedBox(height: 16),
                 TextField(
-                  controller: _tokenCtrl,
-                  style: const TextStyle(color: AppColors.textPrim),
+                  controller: _otpCtrl,
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  style: const TextStyle(color: AppColors.textPrim, letterSpacing: 8),
+                  textAlign: TextAlign.center,
                   decoration: const InputDecoration(
-                    labelText: 'Reset token', labelStyle: TextStyle(color: AppColors.textSec),
+                    labelText: '6-digit code', labelStyle: TextStyle(color: AppColors.textSec),
                     prefixIcon: Icon(Icons.vpn_key_outlined, color: AppColors.textMuted),
                   ),
                 ),

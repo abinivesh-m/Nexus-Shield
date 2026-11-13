@@ -38,6 +38,23 @@ class ResetPasswordRequest(BaseModel):
     new_password: str = Field(min_length=8)
 
 
+class OtpRequest(BaseModel):
+    email: EmailStr
+    purpose: str  # verify | reset
+
+
+class OtpVerifyRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(min_length=6, max_length=6)
+    purpose: str  # verify | reset
+
+
+class OtpResetRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(min_length=6, max_length=6)
+    new_password: str = Field(min_length=8)
+
+
 class VerifyEmailRequest(BaseModel):
     token: str
 

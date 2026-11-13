@@ -236,6 +236,34 @@ class ApiService extends ChangeNotifier {
     _decodeOrThrow(response);
   }
 
+  // OTP-based flows
+  Future<Map<String, dynamic>> requestOtp(String email, String purpose) async {
+    final response = await http.post(
+      Uri.parse('$_BASE_URL/auth/request-otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'purpose': purpose}),
+    ).timeout(const Duration(seconds: 20));
+    return _decodeOrThrow(response) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> verifyOtp(String email, String otp, String purpose) async {
+    final response = await http.post(
+      Uri.parse('$_BASE_URL/auth/verify-otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'otp': otp, 'purpose': purpose}),
+    ).timeout(const Duration(seconds: 20));
+    return _decodeOrThrow(response) as Map<String, dynamic>;
+  }
+
+  Future<void> resetPasswordOtp(String email, String otp, String newPassword) async {
+    final response = await http.post(
+      Uri.parse('$_BASE_URL/auth/reset-password-otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'otp': otp, 'new_password': newPassword}),
+    ).timeout(const Duration(seconds: 20));
+    _decodeOrThrow(response);
+  }
+
   Future<String?> sendVerificationEmail() async {
     final response = await _authedRequest(() => http.post(
           Uri.parse('$_BASE_URL/auth/send-verification'),

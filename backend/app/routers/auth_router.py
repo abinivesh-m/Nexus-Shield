@@ -8,10 +8,13 @@ refresh tokens that can be individually revoked.
 """
 import datetime as dt
 import os
+import secrets
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session as DBSession
+
+from .. import email_service
 
 from ..database import get_db
 from .. import models, schemas
@@ -153,8 +156,10 @@ def forgot_password(req: schemas.ForgotPasswordRequest, db: DBSession = Depends(
             expires_at=dt.datetime.utcnow() + dt.timedelta(hours=2),
         ))
         db.commit()
-        # In production: send `token` via email provider (SendGrid/SES/etc).
-        # Returned here only because there is no email provider wired up yet.
+        sent = email_service.send_reset_link(user.email, token)
+        if sent:
+            return {"message": "If that email exists, a reset link has been sent to your email."}
+        # Dev mode: return the token so the app can display it
         return {"message": "If that email exists, a reset link has been sent.", "dev_reset_token": token}
     return {"message": "If that email exists, a reset link has been sent."}
 
@@ -186,6 +191,14 @@ def send_verification(user: models.User = Depends(get_current_user), db: DBSessi
         expires_at=dt.datetime.utcnow() + dt.timedelta(hours=EMAIL_TOKEN_HOURS),
     ))
     db.commit()
+    sent = email_service.send_email(
+        user.email,
+        "NexusShield — Verify your email",
+        f"Your NexusShield email verification token is: {token}\n\n"
+        f"This token expires in {EMAIL_TOKEN_HOURS} hours.",
+    )
+    if sent:
+        return {"message": "Verification email sent. Check your inbox."}
     return {"message": "Verification email sent", "dev_verify_token": token}
 
 
@@ -204,6 +217,91 @@ def verify_email(req: schemas.VerifyEmailRequest, db: DBSession = Depends(get_db
     et.used = True
     db.commit()
     return {"message": "Email verified successfully"}
+
+
+# ── OTP-based flows (email verification + password reset) ─────────────────
+@router.post("/request-otp")
+def request_otp(req: schemas.OtpRequest, db: DBSession = Depends(get_db)):
+    """Send a 6-digit OTP to the email for the given purpose."""
+    if req.purpose not in ("verify", "reset"):
+        raise HTTPException(status_code=400, detail="Purpose must be 'verify' or 'reset'")
+
+    user = db.query(models.User).filter(models.User.email == req.email).first()
+    # Always return success to avoid leaking which emails exist
+    if not user:
+        return {"message": "If that email exists, an OTP has been sent."}
+
+    # Invalidate old OTPs
+    db.query(models.EmailToken).filter(
+        models.EmailToken.user_id == user.id,
+        models.EmailToken.kind == f"otp_{req.purpose}",
+        models.EmailToken.used == False,  # noqa: E712
+    ).update({"used": True})
+    db.commit()
+
+    otp = f"{secrets.randbelow(1000000):06d}"
+    db.add(models.EmailToken(
+        user_id=user.id, token=otp, kind=f"otp_{req.purpose}",
+        expires_at=dt.datetime.utcnow() + dt.timedelta(minutes=10),
+    ))
+    db.commit()
+
+    if req.purpose == "verify":
+        sent = email_service.send_verification_otp(user.email, otp)
+    else:
+        sent = email_service.send_reset_otp(user.email, otp)
+
+    if sent:
+        return {"message": "If that email exists, an OTP has been sent to your email."}
+    return {"message": "If that email exists, an OTP has been sent.", "dev_otp": otp}
+
+
+@router.post("/verify-otp")
+def verify_otp(req: schemas.OtpVerifyRequest, db: DBSession = Depends(get_db)):
+    """Verify a 6-digit OTP."""
+    if req.purpose not in ("verify", "reset"):
+        raise HTTPException(status_code=400, detail="Purpose must be 'verify' or 'reset'")
+
+    user = db.query(models.User).filter(models.User.email == req.email).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+
+    et = db.query(models.EmailToken).filter(
+        models.EmailToken.user_id == user.id,
+        models.EmailToken.kind == f"otp_{req.purpose}",
+        models.EmailToken.token == req.otp,
+        models.EmailToken.used == False,  # noqa: E712
+    ).first()
+    if not et or et.expires_at < dt.datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+
+    if req.purpose == "verify":
+        user.is_email_verified = True
+    et.used = True
+    db.commit()
+    return {"message": "OTP verified successfully", "verified": True}
+
+
+@router.post("/reset-password-otp")
+def reset_password_otp(req: schemas.OtpResetRequest, db: DBSession = Depends(get_db)):
+    """Reset password using a verified OTP."""
+    user = db.query(models.User).filter(models.User.email == req.email).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+
+    et = db.query(models.EmailToken).filter(
+        models.EmailToken.user_id == user.id,
+        models.EmailToken.kind == "otp_reset",
+        models.EmailToken.token == req.otp,
+        models.EmailToken.used == False,  # noqa: E712
+    ).first()
+    if not et or et.expires_at < dt.datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+
+    user.password_hash = hash_password(req.new_password)
+    et.used = True
+    db.commit()
+    return {"message": "Password updated successfully"}
 
 
 @router.get("/sessions")
