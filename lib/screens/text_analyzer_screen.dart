@@ -48,7 +48,7 @@ class _TextAnalyzerScreenState extends State<TextAnalyzerScreen> {
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: AppColors.brand,
+      backgroundColor: AppColors.red,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ));

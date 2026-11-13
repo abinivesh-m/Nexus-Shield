@@ -40,7 +40,7 @@ class _UrlCheckerScreenState extends State<UrlCheckerScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(friendlyError(e)),
-        backgroundColor: AppColors.brand,
+        backgroundColor: AppColors.red,
         behavior: SnackBarBehavior.floating,
       ));
     } finally {
