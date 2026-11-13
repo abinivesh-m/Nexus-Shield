@@ -28,7 +28,9 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          flutter build apk --release 2>&1 | tee /tmp/build.log
+          # Flutter sometimes looks for the APK in the wrong build dir; the
+          # Collect step below is the source of truth, so don't hard-fail here.
+          flutter build apk --release 2>&1 | tee /tmp/build.log || true
 
       - name: Show build output on failure
         if: failure()
@@ -41,8 +43,14 @@ jobs:
       - name: Collect APK
         if: always()
         run: |
+          set -e
+          if [ -f /tmp/build.log ] && grep -qE "FAILURE: Build failed|BUILD FAILED" /tmp/build.log; then
+            echo "ERROR: Gradle reported a build failure"
+            tail -n 80 /tmp/build.log
+            exit 1
+          fi
           mkdir -p dist
-          APK=$(find . -name "*.apk" -not -path "./.git/*" -not -path "./dist/*" | head -n 1)
+          APK=$(find . -name "app-release.apk" -not -path "./.git/*" -not -path "./dist/*" | head -n 1)
           if [ -z "$APK" ]; then
             echo "ERROR: no APK was produced by the build"
             find . -name "*.apk" || true
@@ -50,6 +58,7 @@ jobs:
           fi
           echo "using $APK"
           cp "$APK" dist/nexusshield-release.apk
+          unzip -t dist/nexusshield-release.apk > /dev/null
           ls -lh dist
 
       - name: Upload APK artifact

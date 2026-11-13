@@ -224,8 +224,8 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(colors: [
-                  AppColors.orange.withValues(alpha: 0.20),
-                  AppColors.orange.withValues(alpha: 0),
+                  AppColors.cyan.withValues(alpha: 0.18),
+                  AppColors.cyan.withValues(alpha: 0),
                 ]),
               ),
             ),
@@ -288,12 +288,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.image_search_rounded,
-                            size: 18, color: Color(0xFF1A1022)),
+                            size: 18, color: Color(0xFF062A2E)),
                         const SizedBox(width: 8),
                         Text(
                           'Analyze a screenshot',
                           style: GoogleFonts.inter(
-                            color: const Color(0xFF1A1022),
+                            color: const Color(0xFF062A2E),
                             fontWeight: FontWeight.w800,
                             fontSize: 13.5,
                           ),
