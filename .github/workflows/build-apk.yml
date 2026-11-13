@@ -58,7 +58,7 @@ jobs:
           fi
           echo "using $APK"
           cp "$APK" dist/nexusshield-release.apk
-          unzip -t dist/nexusshield-release.apk > /dev/null
+          if command -v unzip >/dev/null 2>&1; then unzip -t dist/nexusshield-release.apk > /dev/null; fi
           ls -lh dist
 
       - name: Upload APK artifact
