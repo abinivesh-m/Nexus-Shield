@@ -267,21 +267,21 @@ class _ErrorBanner extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.red.withValues(alpha: 0.10),
+        color: AppColors.brand.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AppColors.red.withValues(alpha: 0.32)),
+        border: Border.all(color: AppColors.brand.withValues(alpha: 0.32)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(Icons.error_outline_rounded,
-              color: AppColors.red, size: 17),
+              color: AppColors.brand, size: 17),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
               style: GoogleFonts.inter(
-                  color: AppColors.red, fontSize: 12.5, height: 1.4),
+                  color: AppColors.brand, fontSize: 12.5, height: 1.4),
             ),
           ),
         ],

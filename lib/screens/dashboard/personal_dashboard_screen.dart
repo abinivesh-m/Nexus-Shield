@@ -45,10 +45,10 @@ class _PersonalDashboardScreenState extends State<PersonalDashboardScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(title: const Text('My Protection Dashboard')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.red))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.brand))
           : RefreshIndicator(
               onRefresh: _load,
-              color: AppColors.red,
+              color: AppColors.brand,
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                 children: [
@@ -140,7 +140,7 @@ class _PersonalDashboardScreenState extends State<PersonalDashboardScreen> {
           barGroups: trend.asMap().entries.map((e) => BarChartGroupData(x: e.key, barRods: [
             BarChartRodData(
               toY: (e.value['count'] as int).toDouble(),
-              color: AppColors.red, width: 18,
+              color: AppColors.brand, width: 18,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
             ),
           ])).toList(),
@@ -169,7 +169,7 @@ class _PersonalDashboardScreenState extends State<PersonalDashboardScreen> {
               sections: [
                 if (safe > 0) PieChartSectionData(value: safe.toDouble(), color: AppColors.green, showTitle: false, radius: 40),
                 if (suspicious > 0) PieChartSectionData(value: suspicious.toDouble(), color: AppColors.yellow, showTitle: false, radius: 40),
-                if (risky > 0) PieChartSectionData(value: risky.toDouble(), color: AppColors.red, showTitle: false, radius: 40),
+                if (risky > 0) PieChartSectionData(value: risky.toDouble(), color: AppColors.brand, showTitle: false, radius: 40),
               ],
             )),
           ),
@@ -178,7 +178,7 @@ class _PersonalDashboardScreenState extends State<PersonalDashboardScreen> {
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           _legendRow(AppColors.green, 'Safe', safe),
           _legendRow(AppColors.yellow, 'Suspicious', suspicious),
-          _legendRow(AppColors.red, 'Risky', risky),
+          _legendRow(AppColors.brand, 'Risky', risky),
         ]),
       ]),
     );

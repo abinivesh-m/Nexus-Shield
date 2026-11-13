@@ -127,7 +127,7 @@ class _FraudNetworkScreenState extends State<FraudNetworkScreen> {
   Widget _buildLoading() {
     return const Center(child: Padding(
       padding: EdgeInsets.only(top: 20),
-      child: CircularProgressIndicator(color: AppColors.red, strokeWidth: 3),
+      child: CircularProgressIndicator(color: AppColors.brand, strokeWidth: 3),
     ));
   }
 
@@ -135,9 +135,9 @@ class _FraudNetworkScreenState extends State<FraudNetworkScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.red.withValues(alpha: 0.08),
+        color: AppColors.brand.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.red.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.brand.withValues(alpha: 0.3)),
       ),
       child: Text(_error!, style: GoogleFonts.inter(color: AppColors.red, fontSize: 13)),
     );
@@ -172,7 +172,7 @@ class _FraudNetworkScreenState extends State<FraudNetworkScreen> {
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.red.withValues(alpha: 0.3)),
+            border: Border.all(color: AppColors.brand.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [

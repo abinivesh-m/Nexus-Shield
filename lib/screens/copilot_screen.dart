@@ -108,10 +108,10 @@ class _CopilotScreenState extends State<CopilotScreen> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: AppColors.red.withValues(alpha: 0.15),
+                color: AppColors.brand.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.smart_toy, color: AppColors.red, size: 18),
+              child: const Icon(Icons.smart_toy, color: AppColors.brand, size: 18),
             ),
             const SizedBox(width: 10),
             Column(
@@ -172,7 +172,7 @@ class _CopilotScreenState extends State<CopilotScreen> {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isUser ? AppColors.red : AppColors.surface,
+          color: isUser ? AppColors.brand : AppColors.surface,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -217,7 +217,7 @@ class _CopilotScreenState extends State<CopilotScreen> {
               height: 14,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: AppColors.red,
+                color: AppColors.brand,
               ),
             ),
             const SizedBox(width: 8),
@@ -305,7 +305,7 @@ class _CopilotScreenState extends State<CopilotScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [AppColors.red, AppColors.orange],
+                  colors: [AppColors.brand, AppColors.orange],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),

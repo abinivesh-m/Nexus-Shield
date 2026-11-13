@@ -44,7 +44,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(title: const Text('Settings'), actions: [
         if (_updating) const Padding(
           padding: EdgeInsets.only(right: 16),
-          child: Center(child: SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.red))),
+          child: Center(child: SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.brand))),
         ),
       ]),
       body: ListView(
@@ -62,7 +62,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 return RadioListTile<String>(
                   value: entry.key,
                   groupValue: user.language,
-                  activeColor: AppColors.red,
+                  activeColor: AppColors.brand,
                   title: Text(entry.value, style: GoogleFonts.inter(color: AppColors.textPrim)),
                   onChanged: (v) {
                     if (v != null) _patch({'language': v});
@@ -113,7 +113,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
       child: SwitchListTile(
-        activeColor: AppColors.red,
+        activeColor: AppColors.brand,
         title: Text(title, style: GoogleFonts.inter(color: AppColors.textPrim, fontWeight: FontWeight.w600, fontSize: 14)),
         subtitle: Text(subtitle, style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12)),
         value: value,

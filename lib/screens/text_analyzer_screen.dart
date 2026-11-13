@@ -48,7 +48,7 @@ class _TextAnalyzerScreenState extends State<TextAnalyzerScreen> {
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: AppColors.red,
+      backgroundColor: AppColors.brand,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ));
@@ -125,7 +125,7 @@ class _TextAnalyzerScreenState extends State<TextAnalyzerScreen> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _ctrl.text.isNotEmpty ? AppColors.red.withValues(alpha: 0.4) : AppColors.border),
+        border: Border.all(color: _ctrl.text.isNotEmpty ? AppColors.brand.withValues(alpha: 0.4) : AppColors.border),
       ),
       child: Column(
         children: [
@@ -153,7 +153,7 @@ class _TextAnalyzerScreenState extends State<TextAnalyzerScreen> {
                   const Spacer(),
                   GestureDetector(
                     onTap: () { _ctrl.clear(); setState(() { _result = null; }); },
-                    child: Text('Clear', style: GoogleFonts.inter(color: AppColors.red, fontSize: 11, fontWeight: FontWeight.w600)),
+                    child: Text('Clear', style: GoogleFonts.inter(color: AppColors.brand, fontSize: 11, fontWeight: FontWeight.w600)),
                   ),
                 ],
               ),
@@ -249,7 +249,7 @@ class _TextAnalyzerScreenState extends State<TextAnalyzerScreen> {
           ...r.redFlags.asMap().entries.map((e) => Container(
             margin: const EdgeInsets.only(bottom: 7),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            decoration: BoxDecoration(color: AppColors.red.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.red.withValues(alpha: 0.2))),
+            decoration: BoxDecoration(color: AppColors.brand.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.brand.withValues(alpha: 0.2))),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

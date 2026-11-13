@@ -104,19 +104,19 @@ class _AuroraPainter extends CustomPainter {
       w * (0.16 + 0.06 * math.sin(p)),
       h * (0.14 + 0.04 * math.cos(p * 0.8)),
       w * 0.78,
-      const Color(0x2EF43F5E),
+      const Color(0x2E14B8A6),
     );
     blob(
       w * (0.92 + 0.04 * math.cos(p * 0.7 + 1.2)),
       h * (0.34 + 0.05 * math.sin(p * 0.9)),
       w * 0.70,
-      const Color(0x26F97316),
+      const Color(0x2614B8A6),
     );
     blob(
       w * (0.48 + 0.08 * math.sin(p * 0.6 + 2.4)),
       h * (0.92 + 0.03 * math.cos(p * 0.5)),
       w * 0.85,
-      const Color(0x223B82F6),
+      const Color(0x22155E75),
     );
 
     // bottom vignette keeps content readable over the glow
@@ -290,7 +290,7 @@ class GradientButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: AppColors.red.withValues(alpha: 0.34),
+                color: AppColors.brand.withValues(alpha: 0.34),
                 blurRadius: 22,
                 offset: const Offset(0, 10),
               ),
@@ -582,7 +582,7 @@ class BrandLogo extends StatelessWidget {
         boxShadow: glow
             ? [
                 BoxShadow(
-                  color: AppColors.red.withValues(alpha: 0.35),
+                  color: AppColors.brand.withValues(alpha: 0.35),
                   blurRadius: size * 0.55,
                   offset: Offset(0, size * 0.16),
                 ),
@@ -636,7 +636,7 @@ class BrandWordmark extends StatelessWidget {
               TextSpan(
                 text: 'Shield',
                 style: GoogleFonts.inter(
-                  color: AppColors.red,
+                  color: AppColors.brand,
                   fontSize: size,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -0.6,

@@ -191,7 +191,7 @@ class _Rings extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: AppColors.red.withValues(alpha: 0.22 * (1 - p)),
+                    color: AppColors.brand.withValues(alpha: 0.22 * (1 - p)),
                     width: 1.4,
                   ),
                 ),

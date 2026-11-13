@@ -43,28 +43,34 @@ class AppColors {
   static const surface2  = Color(0xFF182338);
   static const border    = Color(0xFF22304A);
 
-  // Brand
-  static const red       = Color(0xFFF43F5E);
+  // Brand — Aurora (teal → cyan)
+  static const brand      = Color(0xFF14B8A6);
+  static const brandLight = Color(0xFF5EEAD4);
+  static const brandDeep  = Color(0xFF0E7490);
+  static const cyan       = Color(0xFF22D3EE);
+
+  // Semantic colours. `red` is reserved for danger / high risk only.
+  static const red       = Color(0xFFEF4444);
   static const orange    = Color(0xFFF97316);
   static const green     = Color(0xFF22C55E);
   static const blue      = Color(0xFF3B82F6);
   static const yellow    = Color(0xFFFBBF24);
   static const violet    = Color(0xFF8B5CF6);
 
-  static const brandStart = Color(0xFFFF5A5F);
-  static const brandMid   = Color(0xFFE11D48);
-  static const brandEnd   = Color(0xFFF97316);
+  static const brandStart = Color(0xFF2DD4BF);
+  static const brandMid   = Color(0xFF14B8A6);
+  static const brandEnd   = Color(0xFF22D3EE);
 
   static const brandGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [brandStart, brandMid, brandEnd],
+    colors: [brandMid, Color(0xFF06B6D4), brandEnd],
   );
 
-  static const emberGradient = LinearGradient(
+  static const auroraGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0x33F43F5E), Color(0x000F1729)],
+    colors: [Color(0x3314B8A6), Color(0x000F1729)],
   );
 
   // Text
@@ -132,14 +138,14 @@ class NexusShieldApp extends StatelessWidget {
       splashFactory: InkSparkle.splashFactory,
       colorScheme: dark
           ? const ColorScheme.dark(
-              primary: AppColors.red,
-              secondary: AppColors.orange,
+              primary: AppColors.brand,
+              secondary: AppColors.cyan,
               surface: AppColors.surface,
               error: Color(0xFFEF4444),
             )
           : ColorScheme.light(
               primary: AppColors.brandMid,
-              secondary: AppColors.orange,
+              secondary: AppColors.cyan,
               surface: surfaceColor,
             ),
       textTheme: textTheme.copyWith(
@@ -180,7 +186,7 @@ class NexusShieldApp extends StatelessWidget {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.orange,
+          foregroundColor: AppColors.cyan,
           textStyle:
               GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
         ),
@@ -211,7 +217,7 @@ class NexusShieldApp extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.red, width: 1.6),
+          borderSide: const BorderSide(color: AppColors.brand, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -254,7 +260,7 @@ class NexusShieldApp extends StatelessWidget {
         dragHandleColor: borderColor,
       ),
       progressIndicatorTheme:
-          const ProgressIndicatorThemeData(color: AppColors.red),
+          const ProgressIndicatorThemeData(color: AppColors.brand),
       chipTheme: ChipThemeData(
         backgroundColor: Colors.white.withValues(alpha: 0.05),
         side: BorderSide(color: borderColor),
@@ -297,7 +303,7 @@ class _AuthGateState extends State<AuthGate> {
           return const Scaffold(
             backgroundColor: AppColors.bg,
             body: Center(
-                child: CircularProgressIndicator(color: AppColors.red)),
+                child: CircularProgressIndicator(color: AppColors.brand)),
           );
         }
         return api.isAuthenticated
@@ -384,10 +390,10 @@ class _MainShellState extends State<MainShell> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: AppColors.red.withValues(alpha: 0.12),
+          color: AppColors.brand.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: AppColors.red, size: 20),
+        child: Icon(icon, color: AppColors.brand, size: 20),
       ),
       title: Text(label,
           style: GoogleFonts.inter(
@@ -455,8 +461,8 @@ class _MainShellState extends State<MainShell> {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              AppColors.red.withValues(alpha: 0.20),
-                              AppColors.red.withValues(alpha: 0.04),
+                              AppColors.brand.withValues(alpha: 0.20),
+                              AppColors.brand.withValues(alpha: 0.04),
                             ],
                           )
                         : null,
@@ -469,7 +475,7 @@ class _MainShellState extends State<MainShell> {
                         selected ? item.active : item.icon,
                         size: 21,
                         color:
-                            selected ? AppColors.red : AppColors.textMuted,
+                            selected ? AppColors.brand : AppColors.textMuted,
                       ),
                       const SizedBox(height: 3),
                       Text(

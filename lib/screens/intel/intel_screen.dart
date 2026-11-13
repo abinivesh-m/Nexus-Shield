@@ -29,7 +29,7 @@ class _IntelScreenState extends State<IntelScreen> with SingleTickerProviderStat
         title: const Text('Security Intelligence'),
         bottom: TabBar(
           controller: _tab,
-          indicatorColor: AppColors.red,
+          indicatorColor: AppColors.brand,
           labelColor: AppColors.textPrim,
           unselectedLabelColor: AppColors.textMuted,
           tabs: const [Tab(text: 'Threat Feed'), Tab(text: 'News & Advisories')],
@@ -76,13 +76,13 @@ class _ThreatFeedTabState extends State<_ThreatFeedTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_items == null) return const Center(child: CircularProgressIndicator(color: AppColors.red));
+    if (_items == null) return const Center(child: CircularProgressIndicator(color: AppColors.brand));
     if (_items!.isEmpty) {
       return Center(child: Text('No active threat alerts', style: GoogleFonts.inter(color: AppColors.textMuted)));
     }
     return RefreshIndicator(
       onRefresh: _load,
-      color: AppColors.red,
+      color: AppColors.brand,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _items!.length,
@@ -147,13 +147,13 @@ class _NewsTabState extends State<_NewsTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_items == null) return const Center(child: CircularProgressIndicator(color: AppColors.red));
+    if (_items == null) return const Center(child: CircularProgressIndicator(color: AppColors.brand));
     if (_items!.isEmpty) {
       return Center(child: Text('No news yet', style: GoogleFonts.inter(color: AppColors.textMuted)));
     }
     return RefreshIndicator(
       onRefresh: _load,
-      color: AppColors.red,
+      color: AppColors.brand,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _items!.length,
