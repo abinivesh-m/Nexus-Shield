@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../main.dart' show AppColors;
 import '../../services/api_service.dart';
+import '../../widgets/ui.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
 
@@ -29,7 +29,9 @@ class _LoginScreenState extends State<LoginScreen> {
       _error = null;
     });
     try {
-      await context.read<ApiService>().login(_emailCtrl.text.trim(), _passwordCtrl.text);
+      await context
+          .read<ApiService>()
+          .login(_emailCtrl.text.trim(), _passwordCtrl.text);
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = friendlyError(e));
@@ -38,170 +40,214 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Web client ID from Firebase's auto-generated google-services.json
-  // (oauth_client entry with client_type: 3). This is required as
-  // serverClientId even for Android-only sign-in, because it's what makes
-  // Google issue an idToken your backend can actually verify -- without it
-  // you only get an accessToken, which isn't suitable for server-side auth.
-  static const _googleServerClientId =
-      '125320737051-qrrj7nr0navstmq6jfsc9c89l0apehe5.apps.googleusercontent.com';
-
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    serverClientId: _googleServerClientId,
-    scopes: ['email', 'profile'],
-  );
-
-  Future<void> _signInWithGoogle() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final account = await _googleSignIn.signIn();
-      if (account == null) {
-        // User cancelled the picker -- not an error, just stop quietly.
-        setState(() => _loading = false);
-        return;
-      }
-      final auth = await account.authentication;
-      final idToken = auth.idToken;
-      if (idToken == null) {
-        throw Exception(
-          'Google did not return an ID token. Check that the Web client ID '
-          'is set as serverClientId and matches the one in google-services.json.',
-        );
-      }
-      await context.read<ApiService>().oauthLogin(
-            provider: 'google',
-            idToken: idToken,
-            email: account.email,
-            name: account.displayName ?? '',
-            photoUrl: account.photoUrl ?? '',
-          );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _error = friendlyError(e));
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _oauthPlaceholder(String provider) async {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-        '$provider sign-in is not wired up yet on this platform.',
-      ),
-      backgroundColor: AppColors.surface2,
-    ));
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 40),
-                  Container(
-                    width: 72, height: 72,
-                    decoration: BoxDecoration(
-                      color: AppColors.red.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(Icons.shield, color: AppColors.red, size: 38),
-                  ),
-                  const SizedBox(height: 20),
-                  Text('Welcome back', style: GoogleFonts.inter(
-                    color: AppColors.textPrim, fontSize: 26, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 6),
-                  Text('Sign in to keep your scans and history in sync',
-                      style: GoogleFonts.inter(color: AppColors.textSec, fontSize: 14)),
-                  const SizedBox(height: 32),
-                  if (_error != null) _buildError(_error!),
-                  TextFormField(
-                    controller: _emailCtrl,
-                    style: const TextStyle(color: AppColors.textPrim),
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email', labelStyle: TextStyle(color: AppColors.textSec),
-                      prefixIcon: Icon(Icons.email_outlined, color: AppColors.textMuted),
-                    ),
-                    validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
-                  ),
-                  const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _passwordCtrl,
-                    obscureText: _obscure,
-                    style: const TextStyle(color: AppColors.textPrim),
-                    decoration: InputDecoration(
-                      labelText: 'Password', labelStyle: const TextStyle(color: AppColors.textSec),
-                      prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textMuted),
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                            color: AppColors.textMuted),
-                        onPressed: () => setState(() => _obscure = !_obscure),
+      body: AuroraBackground(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 28),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Center(child: BrandLogo(size: 72)),
+                    const SizedBox(height: 18),
+                    Center(
+                      child: Text(
+                        'NexusShield',
+                        style: GoogleFonts.inter(
+                          color: AppColors.textPrim,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.9,
+                        ),
                       ),
                     ),
-                    validator: (v) => (v == null || v.length < 8) ? 'Password must be 8+ characters' : null,
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
-                      child: Text('Forgot password?',
-                          style: GoogleFonts.inter(color: AppColors.orange, fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: _loading ? null : _submit,
-                    style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-                    child: _loading
-                        ? const SizedBox(height: 20, width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                        : const Text('Sign In'),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(children: [
-                    const Expanded(child: Divider(color: AppColors.border)),
-                    Padding(padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Text('or continue with', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12))),
-                    const Expanded(child: Divider(color: AppColors.border)),
-                  ]),
-                  const SizedBox(height: 18),
-                  Row(children: [
-                    Expanded(child: _OAuthButton(
-                      label: 'Google', icon: Icons.g_mobiledata_rounded,
-                      onTap: _loading ? () {} : _signInWithGoogle,
-                    )),
-                    const SizedBox(width: 12),
-                    Expanded(child: _OAuthButton(
-                      label: 'Apple', icon: Icons.apple,
-                      onTap: () => _oauthPlaceholder('Apple'),
-                    )),
-                  ]),
-                  const SizedBox(height: 28),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text("Don't have an account?", style: GoogleFonts.inter(color: AppColors.textSec)),
-                      TextButton(
-                        onPressed: () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const SignupScreen())),
-                        child: Text('Sign up', style: GoogleFonts.inter(color: AppColors.red, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 6),
+                    Center(
+                      child: Text(
+                        'Your AI shield against digital scams',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          color: AppColors.textSec,
+                          fontSize: 13,
+                        ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                    ),
+                    const SizedBox(height: 30),
+                    GlassCard(
+                      padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
+                      radius: 22,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Welcome back',
+                            style: GoogleFonts.inter(
+                              color: AppColors.textPrim,
+                              fontSize: 21,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.4,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Sign in to keep your scans and history in sync.',
+                            style: GoogleFonts.inter(
+                              color: AppColors.textMuted,
+                              fontSize: 12.5,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          if (_error != null) _ErrorBanner(message: _error!),
+                          TextFormField(
+                            controller: _emailCtrl,
+                            style: const TextStyle(color: AppColors.textPrim),
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [AutofillHints.email],
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
+                              prefixIcon: Icon(Icons.alternate_email_rounded,
+                                  color: AppColors.textMuted, size: 20),
+                            ),
+                            validator: (v) => (v == null || !v.contains('@'))
+                                ? 'Enter a valid email'
+                                : null,
+                          ),
+                          const SizedBox(height: 13),
+                          TextFormField(
+                            controller: _passwordCtrl,
+                            obscureText: _obscure,
+                            style: const TextStyle(color: AppColors.textPrim),
+                            textInputAction: TextInputAction.done,
+                            autofillHints: const [AutofillHints.password],
+                            onFieldSubmitted: (_) => _submit(),
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                              prefixIcon: const Icon(Icons.lock_outline_rounded,
+                                  color: AppColors.textMuted, size: 20),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscure
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  color: AppColors.textMuted,
+                                  size: 20,
+                                ),
+                                onPressed: () =>
+                                    setState(() => _obscure = !_obscure),
+                              ),
+                            ),
+                            validator: (v) => (v == null || v.length < 8)
+                                ? 'Password must be 8+ characters'
+                                : null,
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        const ForgotPasswordScreen()),
+                              ),
+                              child: Text(
+                                'Forgot password?',
+                                style: GoogleFonts.inter(
+                                  color: AppColors.orange,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          GradientButton(
+                            label: 'Sign in',
+                            icon: Icons.arrow_forward_rounded,
+                            loading: _loading,
+                            onPressed: _submit,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    Row(
+                      children: [
+                        const Expanded(
+                            child: Divider(color: Colors.white12, height: 1)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'NEW HERE?',
+                            style: GoogleFonts.inter(
+                              color: AppColors.textMuted,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.4,
+                            ),
+                          ),
+                        ),
+                        const Expanded(
+                            child: Divider(color: Colors.white12, height: 1)),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    OutlinedButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const SignupScreen()),
+                      ),
+                      icon: const Icon(Icons.person_add_alt_1_rounded,
+                          size: 18, color: AppColors.textPrim),
+                      label: Text(
+                        'Create an account',
+                        style: GoogleFonts.inter(
+                          color: AppColors.textPrim,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
+                        side: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.14)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                      ),
+                    ),
+                    const SizedBox(height: 26),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.lock_rounded,
+                            size: 12, color: AppColors.textMuted),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Encrypted in transit · We never sell your data',
+                          style: GoogleFonts.inter(
+                            color: AppColors.textMuted,
+                            fontSize: 10.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -209,41 +255,36 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+}
 
-  Widget _buildError(String msg) {
+class _ErrorBanner extends StatelessWidget {
+  final String message;
+  const _ErrorBanner({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.red.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.red.withValues(alpha: 0.3)),
+        color: AppColors.red.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: AppColors.red.withValues(alpha: 0.32)),
       ),
-      child: Row(children: [
-        const Icon(Icons.error_outline, color: AppColors.red, size: 18),
-        const SizedBox(width: 8),
-        Expanded(child: Text(msg, style: GoogleFonts.inter(color: AppColors.red, fontSize: 13))),
-      ]),
-    );
-  }
-}
-
-class _OAuthButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-  const _OAuthButton({required this.label, required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, color: AppColors.textPrim, size: 22),
-      label: Text(label, style: GoogleFonts.inter(color: AppColors.textPrim, fontWeight: FontWeight.w600)),
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(48),
-        side: const BorderSide(color: AppColors.border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline_rounded,
+              color: AppColors.red, size: 17),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.inter(
+                  color: AppColors.red, fontSize: 12.5, height: 1.4),
+            ),
+          ),
+        ],
       ),
     );
   }
