@@ -25,25 +25,38 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Build release APK
-        run: flutter build apk --release
+        run: |
+          set -o pipefail
+          flutter build apk --release 2>&1 | tee /tmp/build.log
+          echo "flutter build exit: $?"
+
+      - name: Show build output on failure
+        if: failure()
+        run: |
+          echo "=== last 120 lines of the Gradle build ==="
+          tail -n 120 /tmp/build.log || true
+          echo "=== every APK on disk ==="
+          find . -name "*.apk" -not -path "./.git/*" || true
 
       - name: Collect APK
+        if: always()
         run: |
-          set -e
           mkdir -p dist
-          APK=$(find . -name "app-release.apk" -not -path "./dist/*" | head -n 1)
+          APK=$(find . -name "*.apk" -not -path "./.git/*" -not -path "./dist/*" | head -n 1)
           if [ -z "$APK" ]; then
-            echo "ERROR: no app-release.apk was produced"
+            echo "ERROR: no APK was produced by the build"
             find . -name "*.apk" || true
             exit 1
           fi
+          echo "using $APK"
           cp "$APK" dist/nexusshield-release.apk
           ls -lh dist
 
       - name: Upload APK artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nexusshield-release-apk
           path: dist/nexusshield-release.apk
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
