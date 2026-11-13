@@ -407,7 +407,6 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
       body: IndexedStack(index: _index, children: _screens),
       bottomNavigationBar: _buildNav(),
     );

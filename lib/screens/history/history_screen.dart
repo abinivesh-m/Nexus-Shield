@@ -6,7 +6,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../main.dart' show AppColors;
 import '../../models/models.dart';
 import '../../services/api_service.dart';
-import '../../widgets/risk_meter.dart';
 import '../../widgets/lottie_result.dart';
 
 class HistoryScreen extends StatefulWidget {

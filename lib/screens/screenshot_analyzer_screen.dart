@@ -138,6 +138,29 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
               ),
             ),
           ),
+          if (_imageName != null)
+            Positioned(
+              left: 8,
+              bottom: 8,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 230),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.65),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    _imageName!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                        color: Colors.white, fontSize: 10.5),
+                  ),
+                ),
+              ),
+            ),
         ],
       );
     }

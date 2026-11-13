@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../../main.dart' show AppColors, ThemeController;
+import '../../main.dart' show AppColors;
 import '../../services/api_service.dart';
 import 'edit_profile_screen.dart';
 import 'settings_screen.dart';

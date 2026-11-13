@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
           slivers: [
             _buildAppBar(context),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 120),
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   const SizedBox(height: 6),
@@ -140,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return SliverAppBar(
       floating: true,
       snap: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.bg,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       titleSpacing: 18,
