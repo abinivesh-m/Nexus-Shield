@@ -225,7 +225,9 @@ You evaluate whether an offer is genuine or a scam using the extracted details a
 Always respond with ONLY valid JSON in the exact schema requested."""
 
 
-def build_internship_prompt(offer_text, fields, official_domain, domain_match, domain_age_days, red_flags, language="en"):
+def build_internship_prompt(offer_text, fields, official_domain, domain_match,
+                            domain_age_days, red_flags, language="en",
+                            verified_employer=False, search_status="unknown"):
     lang_name = LANGUAGE_NAMES.get(language, "English")
     lang_instruction = (
         f"Write the 'summary' and 'advice' fields in {lang_name}. "
@@ -234,6 +236,19 @@ def build_internship_prompt(offer_text, fields, official_domain, domain_match, d
         else ""
     )
     flags_text = "\n".join(f"- {f.get('flag')}: {f.get('detail')}" for f in (red_flags or [])) or "None"
+    if verified_employer:
+        status_line = (f"CONFIRMED: {official_domain} is the official domain of this "
+                       f"employer and the offer came from it.")
+    elif search_status == "claimed_only":
+        status_line = (f"The offer names {official_domain} but shows no link or email "
+                       f"from that domain - treat it as a name-drop, not proof.")
+    elif search_status == "not_found":
+        status_line = "No official website could be found for the claimed company."
+    elif search_status == "unavailable":
+        status_line = ("A web lookup could not be run. The company is UNVERIFIED, "
+                       "not proven fake.")
+    else:
+        status_line = "No verification data available."
     return f"""Evaluate this internship/job offer for scam indicators.
 
 Offer text:
@@ -247,8 +262,19 @@ Official domain age (days): {domain_age_days if domain_age_days is not None else
 Rule-based red flags already detected:
 {flags_text}
 
-Decide a final verdict. Consider: company existence online, domain match, domain age,
-unrealistic stipend, upfront fees, missing interview, free email providers, urgency.
+Verification status: {status_line}
+
+Decide a final verdict. Weigh only real evidence: upfront fees, a domain that does
+not belong to the company, payment to a personal account, urgency, or a stipend that
+is wildly out of line with the role.
+
+Rules you must follow:
+- A missing interview is NOT a scam signal. Campus crew, ambassador and community
+  programmes normally have no interview.
+- "Unverified" is not "fake". If no lookup ran, say the company is unverified.
+- A famous company is not a scam because it is famous. It is only impersonation when
+  the domain does not belong to that company.
+- If the verification status is CONFIRMED, risk_score must be 30 or lower.
 
 Respond ONLY with a JSON object, no other text, in exactly this format:
 {{
@@ -272,8 +298,12 @@ Risk score guide:
 {lang_instruction}"""
 
 
-def analyze_internship_offer(offer_text, fields, official_domain, domain_match, domain_age_days, red_flags, language="en"):
-    prompt = build_internship_prompt(offer_text, fields, official_domain, domain_match, domain_age_days, red_flags, language)
+def analyze_internship_offer(offer_text, fields, official_domain, domain_match,
+                             domain_age_days, red_flags, language="en",
+                             verified_employer=False, search_status="unknown"):
+    prompt = build_internship_prompt(offer_text, fields, official_domain, domain_match,
+                                     domain_age_days, red_flags, language,
+                                     verified_employer, search_status)
     response = client.models.generate_content(
         model=MODEL,
         contents=prompt,
