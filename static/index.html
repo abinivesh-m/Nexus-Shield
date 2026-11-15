@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusShield — AI-Powered Digital Public Safety Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07090b;--surface:#101417;--surface2:#161b20;--line:#252b30;--line-soft:#1c2126;--text:#e8ebe6;--muted:#8b9691;--faint:#5a6660;--signal:#c7ff4a;--signal-ink:#0e1208;--amber:#f2a93b;--rose:#ff6b5e;--teal:#5fd4c4;--cyan:#38bdf8;--purple:#a78bfa;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(1200px 600px at 15% -10%,rgba(199,255,74,.06),transparent 60%),radial-gradient(900px 500px at 85% 5%,rgba(56,189,248,.05),transparent 60%);pointer-events:none;z-index:0;}
+.shell{max-width:1280px;margin:0 auto;padding:0 28px;position:relative;z-index:1;}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(7,9,11,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft);padding:14px 0;}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-mark{width:24px;height:24px;color:var(--signal);}
+.brand-name{font-weight:700;font-size:16px;letter-spacing:-.02em;}
+.brand-sub{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);}
+.topbar-actions{display:flex;gap:8px;align-items:center;}
+.ai-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--signal);box-shadow:0 0 0 3px rgba(199,255,74,.14);}
+.btn{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;border-radius:999px;padding:8px 16px;border:1px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .16s;}
+.btn-solid{background:var(--signal);color:var(--signal-ink);}
+.btn-solid:hover{background:#d4ff6a;transform:translateY(-1px);}
+.btn-quiet{background:transparent;border-color:var(--line);color:var(--muted);}
+.btn-quiet:hover{border-color:#34383f;color:var(--text);background:var(--surface2);}
+.hero{padding:60px 0 40px;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(340px,.8fr);gap:40px;align-items:center;}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px;margin-bottom:20px;}
+.eyebrow::before{content:'';width:16px;height:1px;background:var(--signal);}
+h1{font-family:Georgia,serif;font-weight:400;font-size:clamp(42px,5.4vw,72px);line-height:.95;letter-spacing:-.02em;margin-bottom:18px;}
+h1 em{font-style:italic;color:var(--signal);}
+.lede{color:var(--muted);font-size:15px;line-height:1.6;max-width:52ch;margin-bottom:28px;}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:32px;}
+.facts{display:flex;gap:0;border-top:1px solid var(--line-soft);padding-top:16px;}
+.facts>div{flex:1;padding-right:16px;}
+.facts>div+div{border-left:1px solid var(--line-soft);padding-left:16px;}
+.facts dt{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:4px;}
+.facts dd{font-size:14px;font-weight:600;}
+.hero-card{background:linear-gradient(180deg,var(--surface) 0%,#0d0e11 100%);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 24px 60px -30px rgba(0,0,0,.9);}
+.hero-card-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;}
+.hero-card-head span:first-child{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+.hero-card-head span:last-child{font-size:12px;color:var(--signal);font-weight:600;}
+.risk-display{font-family:'JetBrains Mono',monospace;font-size:64px;font-weight:700;line-height:1;margin:10px 0;}
+.risk-display span{font-size:20px;color:var(--faint);}
+.risk-bar{height:6px;border-radius:3px;background:var(--line);margin:12px 0;overflow:hidden;}
+.risk-bar-fill{height:100%;border-radius:3px;background:var(--rose);transition:width .4s;}
+.risk-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;}
+.risk-meta div{padding:8px 10px;background:var(--surface2);border-radius:8px;border:1px solid var(--line-soft);}
+.risk-meta div span:first-child{font-size:10px;color:var(--faint);display:block;margin-bottom:2px;}
+.risk-meta div span:last-child{font-size:12px;font-weight:600;}
+.section{padding:40px 0;border-top:1px solid var(--line-soft);}
+.section-kicker{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--signal);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.section-kicker::before{content:'';width:12px;height:1px;background:var(--signal);}
+.section-headline{font-family:Georgia,serif;font-size:28px;font-weight:400;line-height:1.15;margin-bottom:8px;}
+.section-desc{color:var(--muted);font-size:13px;max-width:720px;line-height:1.5;margin-bottom:20px;}
+.analyzer{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.analyzer-input{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;}
+.analyzer-input textarea{width:100%;min-height:120px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;resize:vertical;margin-bottom:12px;}
+.analyzer-input textarea:focus{outline:none;border-color:var(--signal);}
+.analyzer-result{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;}
+.result-empty{color:var(--faint);font-size:12px;text-align:center;padding:40px 20px;}
+.red-flag{padding:8px 10px;background:rgba(255,107,94,.08);border:1px solid rgba(255,107,94,.2);border-radius:6px;margin-bottom:6px;font-size:12px;}
+.red-flag strong{color:var(--rose);font-size:10px;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:2px;}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.feature-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;transition:all .2s;}
+.feature-card:hover{border-color:var(--signal);transform:translateY(-2px);box-shadow:0 0 20px rgba(199,255,74,.08);}
+.feature-card h3{font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text);}
+.feature-card p{font-size:12px;color:var(--muted);line-height:1.5;}
+.feature-card .icon{font-size:20px;margin-bottom:10px;}
+.hotspot-map{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;min-height:300px;}
+.hotspot-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface2);border-radius:8px;margin-bottom:6px;border:1px solid var(--line-soft);}
+.hotspot-city{font-weight:600;font-size:12px;}
+.hotspot-cat{font-size:10px;color:var(--muted);}
+.hotspot-count{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--signal);font-weight:600;}
+.fraud-network{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;}
+.network-node{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;font-size:11px;font-family:'JetBrains Mono',monospace;margin:4px;background:var(--surface2);border:1px solid var(--line);}
+.network-node.phone{border-color:var(--rose);color:var(--rose);}
+.network-node.upi{border-color:var(--amber);color:var(--amber);}
+.network-node.bank{border-color:var(--cyan);color:var(--cyan);}
+.network-node.website{border-color:var(--purple);color:var(--purple);}
+.footer{border-top:1px solid var(--line-soft);padding:24px 0;margin-top:40px;display:flex;justify-content:space-between;align-items:center;}
+.footer span{font-size:11px;color:var(--faint);}
+@media(max-width:900px){.hero{grid-template-columns:1fr;}.analyzer{grid-template-columns:1fr;}.feature-grid{grid-template-columns:1fr;}.facts{flex-wrap:wrap;}.facts>div{flex:1 1 50%;border:none;padding:8px 0;}}
+</style>
+</head>
+<body>
+<div class="topbar">
+<div class="shell topbar-inner">
+<div class="brand">
+<svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2 3 7v10l9 5 9-5V7L12 2Z"/><path d="M12 2v10l9 5M12 12 3 7" opacity=".4"/></svg>
+<span class="brand-name">NexusShield</span>
+<span class="brand-sub">Digital Public Safety</span>
+</div>
+<div class="topbar-actions">
+<span class="ai-pill"><span class="dot"></span> Gemini online</span>
+<button class="btn btn-quiet" onclick="scrollToSection('analyzer')">Analyze</button>
+<button class="btn btn-solid" onclick="scrollToSection('features')">Explore</button>
+</div>
+</div>
+</div>
+
+<div class="shell">
+<section class="hero">
+<div class="stage-copy">
+<p class="eyebrow">AI-Powered Digital Public Safety</p>
+<h1>Protect India from <em>digital fraud</em>.</h1>
+<p class="lede">NexusShield combines AI scam detection, counterfeit currency verification, fraud network intelligence, and geospatial crime mapping into one accessible platform for citizens and authorities.</p>
+<div class="hero-actions">
+<button class="btn btn-solid" onclick="scrollToSection('analyzer')">Analyze a Threat</button>
+<button class="btn btn-quiet" onclick="scrollToSection('features')">Explore Platform</button>
+</div>
+<dl class="facts">
+<div><dt>Scam Categories</dt><dd>12</dd></div>
+<div><dt>Languages</dt><dd>5</dd></div>
+<div><dt>AI Engine</dt><dd>Gemini 2.5</dd></div>
+</dl>
+</div>
+<div class="hero-card">
+<div class="hero-card-head"><span>Threat Analysis</span><span>Live Demo</span></div>
+<div class="risk-display" id="riskScore">--<span>%</span></div>
+<div class="risk-bar"><div class="risk-bar-fill" id="riskBar" style="width:0%"></div></div>
+<div class="risk-meta">
+<div><span>Scam Type</span><span id="scamType">Awaiting input</span></div>
+<div><span>Risk Level</span><span id="riskLevel">--</span></div>
+<div><span>Category</span><span id="scamCat">--</span></div>
+<div><span>Language</span><span id="langLabel">English</span></div>
+</div>
+</div>
+</section>
+
+<section class="section" id="analyzer">
+<div class="section-kicker">AI Scam Detection</div>
+<h2 class="section-headline">Analyze any suspicious content</h2>
+<p class="section-desc">Paste a message, URL, or description. NexusShield uses Google Gemini to analyze it for scam indicators across 12 categories and 5 Indian languages.</p>
+<div class="analyzer">
+<div class="analyzer-input">
+<label style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px;">Suspicious content</label>
+<textarea id="analysisText" placeholder="Paste a suspicious message, URL, or description here..."></textarea>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+<select id="analysisLang" style="background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;">
+<option value="en">English</option><option value="ta">Tamil</option><option value="hi">Hindi</option><option value="kn">Kannada</option><option value="te">Telugu</option>
+</select>
+<button class="btn btn-solid" onclick="analyzeText()">Analyze with Gemini</button>
+</div>
+</div>
+<div class="analyzer-result" id="analysisResult">
+<div class="result-empty">Analysis results will appear here.</div>
+</div>
+</div>
+</section>
+
+<section class="section" id="features">
+<div class="section-kicker">Platform Capabilities</div>
+<h2 class="section-headline">Built for citizens and authorities</h2>
+<p class="section-desc">NexusShield combines AI detection, community intelligence, and authority reporting into one platform.</p>
+<div class="feature-grid">
+<div class="feature-card"><div class="icon">🛡️</div><h3>AI Scam Detection</h3><p>Analyze screenshots, messages, URLs, and call transcripts using Google Gemini Vision and NLP.</p></div>
+<div class="feature-card"><div class="icon">💰</div><h3>Counterfeit Currency</h3><p>Scan banknotes with AI vision to verify authenticity cues like security threads and watermarks.</p></div>
+<div class="feature-card"><div class="icon">🔗</div><h3>Fraud Network</h3><p>Graph-based entity linking across phone numbers, UPI IDs, bank accounts, and websites.</p></div>
+<div class="feature-card"><div class="icon">📍</div><h3>Crime Hotspots</h3><p>Geospatial clustering of fraud reports for patrol prioritization and trend visualization.</p></div>
+<div class="feature-card"><div class="icon">👨‍👩‍👧</div><h3>Family Protection</h3><p>Monitor family members' digital safety with real-time alerts.</p></div>
+<div class="feature-card"><div class="icon">🏢</div><h3>Enterprise Dashboard</h3><p>Organization-level threat monitoring and employee protection analytics.</p></div>
+<div class="feature-card"><div class="icon">📄</div><h3>PDF Reports</h3><p>Generate evidence packages for investigation and reporting.</p></div>
+<div class="feature-card"><div class="icon">🌐</div><h3>Multi-Language</h3><p>Supports English, Tamil, Hindi, Kannada, and Telugu.</p></div>
+<div class="feature-card"><div class="icon">🔌</div><h3>Integrations</h3><p>Safe Browsing, VirusTotal, AbuseIPDB, and HaveIBeenPwned APIs.</p></div>
+</div>
+</section>
+
+<section class="section">
+<div class="section-kicker">Crime Hotspot Intelligence</div>
+<h2 class="section-headline">Geospatial fraud mapping</h2>
+<p class="section-desc">Fraud reports are clustered geographically to identify hotspots and prioritize law enforcement response.</p>
+<div class="hotspot-map" id="hotspotMap">
+<div style="color:var(--faint);font-size:12px;text-align:center;padding:40px;">Loading hotspot data...</div>
+</div>
+</section>
+
+<section class="section">
+<div class="section-kicker">Fraud Network Intelligence</div>
+<h2 class="section-headline">Linked entity graph</h2>
+<p class="section-desc">Phone numbers, UPI IDs, bank accounts, and websites are linked to reveal fraud networks.</p>
+<div class="fraud-network" id="fraudNetwork">
+<div style="color:var(--faint);font-size:12px;text-align:center;padding:40px;">Loading network data...</div>
+</div>
+</section>
+
+<div class="footer">
+<span>NexusShield — AI-Powered Digital Public Safety Platform</span>
+<span>Powered by Google Gemini · FastAPI · PostgreSQL</span>
+</div>
+</div>
+
+<script>
+const API_BASE = window.location.origin;
+function scrollToSection(id){document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});}
+async function analyzeText(){
+const text=document.getElementById('analysisText').value.trim();
+if(!text){alert('Please enter content to analyze');return;}
+const lang=document.getElementById('analysisLang').value;
+const btn=document.querySelector('.analyzer-input .btn-solid');
+btn.textContent='Analyzing...';btn.disabled=true;
+try{
+const res=await fetch(API_BASE+'/analyze/text',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer demo'},body:JSON.stringify({text,language:lang})});
+if(!res.ok){throw new Error('Analysis failed: '+res.status);}
+const data=await res.json();
+const score=data.risk_score||0;
+document.getElementById('riskScore').innerHTML=score+'<span>%</span>';
+const bar=document.getElementById('riskBar');
+bar.style.width=score+'%';
+bar.style.background=score<=30?'var(--teal)':score<=60?'var(--amber)':score<=80?'var(--rose)':'var(--rose)';
+document.getElementById('scamType').textContent=data.scam_type||'Unknown';
+document.getElementById('scamCat').textContent=data.category||'Unknown';
+document.getElementById('riskLevel').textContent=score<=30?'Safe':score<=60?'Suspicious':score<=80?'High Risk':'Definite Scam';
+document.getElementById('langLabel').textContent={en:'English',ta:'Tamil',hi:'Hindi',kn:'Kannada',te:'Telugu'}[lang];
+let html='<div style="margin-bottom:12px;"><strong style="font-size:14px;color:'+(score<=30?'var(--teal)':score<=60?'var(--amber)':'var(--rose)')+'">'+data.scam_type+'</strong><p style="font-size:12px;color:var(--muted);margin-top:4px;">'+data.summary+'</p></div>';
+if(data.red_flags&&data.red_flags.length){html+='<div style="margin-bottom:12px;">';data.red_flags.forEach(f=>{html+='<div class="red-flag"><strong>'+(f.flag||'')+'</strong>'+(f.detail||'')+'</div>';});html+='</div>';}
+html+='<div style="padding:10px;background:var(--surface2);border-radius:8px;border:1px solid var(--line-soft);"><span style="font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;">Advice</span><p style="font-size:12px;margin-top:4px;">'+data.advice+'</p></div>';
+document.getElementById('analysisResult').innerHTML=html;
+}catch(e){document.getElementById('analysisResult').innerHTML='<div class="result-empty" style="color:var(--rose);">Error: '+e.message+'</div>';}
+finally{btn.textContent='Analyze with Gemini';btn.disabled=false;}
+}
+async function loadHotspots(){
+try{
+const res=await fetch(API_BASE+'/intel/hotspots');
+const data=await res.json();
+let html='';
+data.forEach(h=>{
+html+='<div class="hotspot-item"><div><div class="hotspot-city">'+h.city+'</div><div class="hotspot-cat">'+h.top_category+' · '+h.report_count+' reports</div></div><div class="hotspot-count">'+h.report_count+'</div></div>';
+});
+document.getElementById('hotspotMap').innerHTML=html||'<div class="result-empty">No hotspot data</div>';
+}catch(e){document.getElementById('hotspotMap').innerHTML='<div class="result-empty" style="color:var(--rose);">Failed to load</div>';}
+}
+async function loadNetwork(){
+try{
+const res=await fetch(API_BASE+'/intel/fraud-network?value=test&node_type=phone');
+const data=await res.json();
+let html='<div style="margin-bottom:12px;font-size:12px;color:var(--muted);">Fraud network entities:</div>';
+if(data.nodes){data.nodes.forEach(n=>{html+='<span class="network-node '+n.type+'">'+n.label+'</span>';});}
+if(data.edges&&data.edges.length){html+='<div style="margin-top:12px;font-size:11px;color:var(--faint);">Connections: '+data.edges.length+'</div>';}
+document.getElementById('fraudNetwork').innerHTML=html||'<div class="result-empty">No network data</div>';
+}catch(e){document.getElementById('fraudNetwork').innerHTML='<div class="result-empty" style="color:var(--rose);">Failed to load</div>';}
+}
+loadHotspots();
+loadNetwork();
+</script>
+</body>
+</html>

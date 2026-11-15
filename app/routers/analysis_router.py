@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session as DBSession
 
 from ..database import get_db
 from .. import models, schemas, ai_engine
-from ..deps import get_current_user
+from ..deps import get_optional_user
 from ..scam_db import check_against_db, severity_to_risk_score, extract_candidates
 
 router = APIRouter(tags=["analysis"])
@@ -62,12 +62,13 @@ def _result_from_db_match(match: dict) -> dict:
 @router.post("/analyze/screenshot")
 def analyze_screenshot(
     req: schemas.ScreenshotRequest,
-    user: models.User = Depends(get_current_user),
+    user: models.User = Depends(get_optional_user),
     db: DBSession = Depends(get_db),
 ):
     try:
         result = ai_engine.analyze_image(req.image_base64, req.language)
-        _save_history(db, user, "screenshot", "[screenshot]", result, False, req.language)
+        if user is not None:
+            _save_history(db, user, "screenshot", "[screenshot]", result, False, req.language)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -76,7 +77,7 @@ def analyze_screenshot(
 @router.post("/analyze/text")
 def analyze_text(
     req: schemas.TextRequest,
-    user: models.User = Depends(get_current_user),
+    user: models.User = Depends(get_optional_user),
     db: DBSession = Depends(get_db),
 ):
     try:
@@ -84,11 +85,13 @@ def analyze_text(
         match = check_against_db(db, req.text)
         if match:
             result = _result_from_db_match(match)
-            _save_history(db, user, "text", req.text, result, True, req.language)
+            if user is not None:
+                _save_history(db, user, "text", req.text, result, True, req.language)
             return result
 
         result = ai_engine.analyze_text_content(req.text, req.language)
-        _save_history(db, user, "text", req.text, result, False, req.language)
+        if user is not None:
+            _save_history(db, user, "text", req.text, result, False, req.language)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -97,14 +100,15 @@ def analyze_text(
 @router.post("/analyze/url")
 def analyze_url(
     req: schemas.UrlRequest,
-    user: models.User = Depends(get_current_user),
+    user: models.User = Depends(get_optional_user),
     db: DBSession = Depends(get_db),
 ):
     try:
         match = check_against_db(db, req.url)
         if match:
             result = _result_from_db_match(match)
-            _save_history(db, user, "url", req.url, result, True, req.language)
+            if user is not None:
+                _save_history(db, user, "url", req.url, result, True, req.language)
             return result
 
         domain = urllib.parse.urlparse(req.url).netloc
@@ -125,7 +129,8 @@ def analyze_url(
             f"Contains suspicious patterns: {has_suspicious}"
         )
         result = ai_engine.analyze_url_content(url_context, req.language)
-        _save_history(db, user, "url", req.url, result, False, req.language)
+        if user is not None:
+            _save_history(db, user, "url", req.url, result, False, req.language)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -134,7 +139,7 @@ def analyze_url(
 @router.post("/analyze/clipboard")
 def analyze_clipboard(
     req: schemas.ClipboardCheckRequest,
-    user: models.User = Depends(get_current_user),
+    user: models.User = Depends(get_optional_user),
     db: DBSession = Depends(get_db),
 ):
     """
@@ -174,7 +179,7 @@ def get_categories():
 
 
 @router.post("/copilot/chat")
-def copilot_chat(req: schemas.ChatRequest, user: models.User = Depends(get_current_user)):
+def copilot_chat(req: schemas.ChatRequest, user: models.User = Depends(get_optional_user)):
     try:
         reply = ai_engine.copilot_reply(req.message, req.history, req.language)
         return {"reply": reply}

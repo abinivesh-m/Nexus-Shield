@@ -17,7 +17,8 @@ from google.genai import types
 # backend/.env is two directories up from backend/app/ai_engine.py.
 load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY", ""))
+_api_key = os.environ.get("GEMINI_API_KEY", "")
+client = genai.Client(api_key=_api_key) if _api_key else None
 
 # Use a current Gemini model string. See https://ai.google.dev/gemini-api/docs/models
 # for the latest available models -- update this if your account uses a different one.
@@ -112,6 +113,10 @@ def safe_parse_result(text: str) -> dict:
 
 
 def analyze_image(image_base64: str, language: str = "en") -> dict:
+    if client is None:
+        return {"risk_score": 50, "scam_type": "Unknown", "category": "Unknown", "summary": "Gemini is not configured. Set GEMINI_API_KEY for AI analysis.", "red_flags": [], "advice": "Do not share personal information until verified."}
+    if client is None:
+        return {"risk_score": 50, "scam_type": "Unknown", "category": "Unknown", "summary": "Gemini is not configured. Set GEMINI_API_KEY for AI analysis.", "red_flags": [], "advice": "Do not share personal information until verified."}
     import base64
     image_bytes = base64.b64decode(image_base64)
     response = client.models.generate_content(
@@ -130,6 +135,10 @@ def analyze_image(image_base64: str, language: str = "en") -> dict:
 
 
 def analyze_text_content(text: str, language: str = "en") -> dict:
+    if client is None:
+        return {"risk_score": 50, "scam_type": "Unknown", "category": "Unknown", "summary": "Gemini is not configured. Set GEMINI_API_KEY for AI analysis.", "red_flags": [], "advice": "Do not share personal information until verified."}
+    if client is None:
+        return {"risk_score": 50, "scam_type": "Unknown", "category": "Unknown", "summary": "Gemini is not configured. Set GEMINI_API_KEY for AI analysis.", "red_flags": [], "advice": "Do not share personal information until verified."}
     response = client.models.generate_content(
         model=MODEL,
         contents=build_analysis_prompt(f'"{text}"', language),
@@ -143,6 +152,10 @@ def analyze_text_content(text: str, language: str = "en") -> dict:
 
 
 def analyze_url_content(url_context: str, language: str = "en") -> dict:
+    if client is None:
+        return {"risk_score": 50, "scam_type": "Unknown", "category": "Unknown", "summary": "Gemini is not configured. Set GEMINI_API_KEY for AI analysis.", "red_flags": [], "advice": "Do not share personal information until verified."}
+    if client is None:
+        return {"risk_score": 50, "scam_type": "Unknown", "category": "Unknown", "summary": "Gemini is not configured. Set GEMINI_API_KEY for AI analysis.", "red_flags": [], "advice": "Do not share personal information until verified."}
     response = client.models.generate_content(
         model=MODEL,
         contents=build_analysis_prompt(url_context, language),
@@ -205,6 +218,10 @@ Risk score guide:
 
 
 def analyze_call_transcript(transcript: str, caller_number: str = "", language: str = "en") -> dict:
+    if client is None:
+        return {"risk_score": 50, "scam_type": "Unknown", "category": "Unknown", "summary": "Gemini is not configured. Set GEMINI_API_KEY for AI analysis.", "red_flags": [], "advice": "Do not share personal information until verified."}
+    if client is None:
+        return {"risk_score": 50, "scam_type": "Unknown", "category": "Unknown", "summary": "Gemini is not configured. Set GEMINI_API_KEY for AI analysis.", "red_flags": [], "advice": "Do not share personal information until verified."}
     response = client.models.generate_content(
         model=MODEL,
         contents=build_call_prompt(transcript, caller_number, language),
@@ -267,6 +284,10 @@ def safe_parse_currency_result(text: str) -> dict:
 
 
 def analyze_currency_image(image_base64: str, language: str = "en") -> dict:
+    if client is None:
+        return {"likely_genuine": False, "confidence_percent": 0, "reasons": ["Gemini is not configured. Set GEMINI_API_KEY for AI analysis."]}
+    if client is None:
+        return {"likely_genuine": False, "confidence_percent": 0, "reasons": ["Gemini is not configured. Set GEMINI_API_KEY for AI analysis."]}
     import base64
     image_bytes = base64.b64decode(image_base64)
     response = client.models.generate_content(
@@ -285,6 +306,10 @@ def analyze_currency_image(image_base64: str, language: str = "en") -> dict:
 
 
 def copilot_reply(message: str, history: list[dict], language: str = "en") -> str:
+    if client is None:
+        return "Gemini is not configured. Set GEMINI_API_KEY to enable the AI copilot."
+    if client is None:
+        return "Gemini is not configured. Set GEMINI_API_KEY to enable the AI copilot."
     # Gemini uses "user" / "model" roles (not "assistant"), and expects each
     # turn as a Content object with a list of Parts.
     contents = []

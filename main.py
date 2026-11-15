@@ -1,5 +1,5 @@
 """
-NexusShield FastAPI Backend — Production-shaped build.
+NexusShield FastAPI Backend - Production-shaped build.
 
 Run: uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
@@ -30,14 +30,12 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Anchor to this file's directory rather than relying on the process's
-# current working directory -- uvicorn's --reload spawns a subprocess that
-# can start from a different cwd (notably on Windows), which silently makes
-# a cwd-relative load_dotenv() find nothing.
 load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from app.database import init_db, SessionLocal
 from app.seed_data import seed_if_empty
@@ -58,7 +56,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.on_event("startup")
 def on_startup():
     init_db()
@@ -67,7 +64,6 @@ def on_startup():
         seed_if_empty(db)
     finally:
         db.close()
-
 
 app.include_router(auth_router.router)
 app.include_router(profile_router.router)
@@ -85,36 +81,26 @@ app.include_router(integrations_router.router)
 app.include_router(currency_router.router)
 app.include_router(call_router.router)
 
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 @app.get("/")
 async def root():
-    """Root endpoint — API info and available endpoints."""
+    index = STATIC_DIR / "index.html"
+    if index.exists():
+        return FileResponse(str(index))
     return {
         "status": "online",
         "service": "NexusShield API",
         "version": "2.0.0",
-        "message": "NexusShield — AI-powered scam detection and threat intelligence",
+        "message": "NexusShield - AI-powered scam detection and threat intelligence",
         "docs": "/docs",
         "openapi": "/openapi.json",
-        "endpoints": {
-            "auth": "/auth/*",
-            "profile": "/profile/*",
-            "history": "/history/*",
-            "reports": "/reports/*",
-            "analysis": "/analyze/*",
-            "currency": "/analyze/currency",
-            "call": "/analyze/call",
-            "family": "/family/*",
-            "organization": "/org/*",
-            "admin": "/admin/*",
-            "intelligence": "/intel/*",
-            "notifications": "/notifications/*",
-            "dashboard": "/dashboard/*",
-            "integrations": "/integrations/*",
-        },
         "health": "/health",
     }
-
 
 @app.get("/health")
 async def health():
