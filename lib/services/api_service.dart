@@ -72,7 +72,7 @@ String friendlyError(Object e) {
 }
 
 class ApiService extends ChangeNotifier {
-  static const _secureStorage = FlutterSecureStorage(
+  final _secureStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
   String? _accessToken;

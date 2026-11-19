@@ -23,6 +23,7 @@ dependencies:
 
   # Local persistence
   shared_preferences: ^2.2.2
+  flutter_secure_storage: ^9.2.2
 
   # Image picking
   image_picker: ^1.0.7

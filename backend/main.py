@@ -44,7 +44,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
-from app.database import init_db, SessionLocal
+from app.database import init_db, migrate, SessionLocal
 from app.seed_data import seed_if_empty
 
 from app.routers import (
@@ -118,6 +118,7 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     init_db()
+    migrate()
     db = SessionLocal()
     try:
         seed_if_empty(db)
