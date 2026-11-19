@@ -6,8 +6,9 @@ from pydantic import BaseModel, EmailStr, Field
 # ── Auth ─────────────────────────────────────────────────────────────────────
 class SignupRequest(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8)
-    name: str = ""
+    password: str = Field(min_length=10, max_length=128)
+    name: str = Field(default="", max_length=100)
+    phone: str = Field(default="", max_length=20)
 
 
 class LoginRequest(BaseModel):
@@ -39,7 +40,8 @@ class ResetPasswordRequest(BaseModel):
 
 
 class OtpRequest(BaseModel):
-    email: EmailStr
+    email: EmailStr | None = None
+    phone: str | None = None
     purpose: str  # verify | reset
 
 
@@ -69,6 +71,7 @@ class AuthTokens(BaseModel):
 class ProfileUpdateRequest(BaseModel):
     name: str | None = None
     photo_url: str | None = None
+    phone: str | None = None
     language: str | None = None
     theme: str | None = None
     notif_push_enabled: bool | None = None
@@ -80,28 +83,28 @@ class ProfileUpdateRequest(BaseModel):
 
 # ── Analysis ─────────────────────────────────────────────────────────────────
 class ScreenshotRequest(BaseModel):
-    image_base64: str
+    image_base64: str = Field(max_length=8_000_000)
     language: str = "en"
 
 
 class TextRequest(BaseModel):
-    text: str
+    text: str = Field(max_length=10_000)
     language: str = "en"
 
 
 class UrlRequest(BaseModel):
-    url: str
+    url: str = Field(max_length=2048)
     language: str = "en"
 
 
 class ChatRequest(BaseModel):
-    message: str
-    history: list[dict] = []
+    message: str = Field(max_length=4000)
+    history: list[dict] = Field(default_factory=list, max_length=20)
     language: str = "en"
 
 
 class ClipboardCheckRequest(BaseModel):
-    content: str
+    content: str = Field(max_length=5000)
 
 
 # ── Scam Reporting ───────────────────────────────────────────────────────────
@@ -124,18 +127,18 @@ class ScamReportRequest(BaseModel):
 
 
 class CurrencyAnalysisRequest(BaseModel):
-    image_base64: str
+    image_base64: str = Field(max_length=8_000_000)
     language: str = "en"
 
 
 class CallAnalysisRequest(BaseModel):
-    transcript: str
-    caller_number: str = ""
+    transcript: str = Field(max_length=20_000)
+    caller_number: str = Field(default="", max_length=32)
     language: str = "en"
 
 
 class InternshipAnalysisRequest(BaseModel):
-    offer_text: str
+    offer_text: str = Field(max_length=20_000)
     language: str = "en"
 
 

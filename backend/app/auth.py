@@ -12,7 +12,22 @@ import secrets
 import jwt
 from passlib.context import CryptContext
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "nexusshield-dev-secret-change-me")
+_IS_PROD = (
+    os.environ.get("VERCEL_ENV") == "production"
+    or os.environ.get("ENV", "").lower() == "production"
+)
+
+# Fail closed in production: a missing secret must not silently fall back to a
+# well-known string that anyone can use to forge tokens.
+_DEFAULT_JWT = "nexusshield-dev-secret-change-me"
+_env_jwt = os.environ.get("JWT_SECRET")
+if _env_jwt:
+    JWT_SECRET = _env_jwt
+elif _IS_PROD:
+    raise RuntimeError("JWT_SECRET must be set in production")
+else:
+    JWT_SECRET = _DEFAULT_JWT
+
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_MINUTES = 30
 REFRESH_TOKEN_DAYS = 30

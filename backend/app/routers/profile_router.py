@@ -15,6 +15,7 @@ def _serialize(user: models.User) -> dict:
         "email": user.email,
         "name": user.name,
         "photo_url": user.photo_url,
+        "phone": user.phone,
         "auth_provider": user.auth_provider,
         "is_email_verified": user.is_email_verified,
         "is_admin": user.is_admin,
@@ -47,7 +48,7 @@ def update_profile(
 ):
     data = req.model_dump(exclude_unset=True)
     field_map = {
-        "name": "name", "photo_url": "photo_url", "language": "language", "theme": "theme",
+        "name": "name", "photo_url": "photo_url", "phone": "phone", "language": "language", "theme": "theme",
         "notif_push_enabled": "notif_push_enabled",
         "notif_threat_alerts": "notif_threat_alerts",
         "notif_weekly_summary": "notif_weekly_summary",
@@ -80,6 +81,9 @@ def delete_account(user: models.User = Depends(get_current_user), db: DBSession 
 
     user.organization_id = None
     db.add(user)
+    db.flush()
+
+    db.add(models.AuditLog(user_id=uid, event="account_deleted", detail="self-service"))
     db.flush()
 
     db.delete(user)

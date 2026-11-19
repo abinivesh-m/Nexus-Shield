@@ -92,10 +92,16 @@ def seed_if_empty(db: DBSession):
     # Demo admin account so the admin panel is reachable out of the box.
     admin = db.query(models.User).filter(models.User.email == "admin@nexusshield.app").first()
     if admin is None:
+        import os
+        seed_pw = os.environ.get("ADMIN_SEED_PASSWORD")
+        if not seed_pw:
+            if os.environ.get("VERCEL_ENV") == "production" or os.environ.get("ENV", "").lower() == "production":
+                return
+            seed_pw = "ChangeMe123!"
         from .auth import hash_password
         admin = models.User(
             email="admin@nexusshield.app",
-            password_hash=hash_password("ChangeMe123!"),
+            password_hash=hash_password(seed_pw),
             name="NexusShield Admin",
             is_admin=True,
             is_email_verified=True,

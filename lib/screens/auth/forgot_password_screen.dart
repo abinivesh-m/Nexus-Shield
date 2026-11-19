@@ -18,7 +18,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _newPasswordCtrl = TextEditingController();
   bool _loading = false;
   bool _otpSent = false;
-  String? _devOtp;
   String? _error;
   String? _success;
 
@@ -27,11 +26,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (email.isEmpty) return;
     setState(() { _loading = true; _error = null; });
     try {
-      final res = await context.read<ApiService>().requestOtp(email, 'reset');
+      await context.read<ApiService>().requestOtp(email, 'reset');
       if (!mounted) return;
       setState(() {
         _otpSent = true;
-        _devOtp = res['dev_otp']?.toString();
       });
     } catch (e) {
       if (!mounted) return;
@@ -105,22 +103,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       : const Text('Send reset code'),
                 ),
               ] else ...[
-                if (_devOtp != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.yellow.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.yellow.withValues(alpha: 0.3)),
-                    ),
-                    child: Text(
-                      'No email provider is configured yet, so here is your reset code directly '
-                      'for testing:\n\n$_devOtp',
-                      style: GoogleFonts.inter(color: AppColors.yellow, fontSize: 12.5),
-                    ),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.brand.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.brand.withValues(alpha: 0.25)),
                   ),
-                  const SizedBox(height: 16),
-                ],
+                  child: Text(
+                    'We have sent a 6-digit code to your email. It expires in 10 minutes. '
+                    'If you do not see it, check your spam folder.',
+                    style: GoogleFonts.inter(color: AppColors.textSec, fontSize: 12.5, height: 1.4),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 Text('Enter the 6-digit code sent to your email and your new password.',
                     style: GoogleFonts.inter(color: AppColors.textSec, fontSize: 14)),
                 const SizedBox(height: 16),

@@ -11,16 +11,16 @@ import os
 import secrets
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session as DBSession
 
-from .. import email_service
+from .. import email_service, sms_service
 
 from ..database import get_db
 from .. import models, schemas
 from ..auth import (
     hash_password, verify_password, create_access_token,
-    generate_refresh_token, generate_email_token,
+    generate_refresh_token, generate_email_token, _IS_PROD,
 )
 from ..deps import get_current_user
 
@@ -28,6 +28,15 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 REFRESH_TOKEN_DAYS = 30
 EMAIL_TOKEN_HOURS = 24
+
+
+def _audit(db: DBSession, user_id: str | None, event: str, request: Request | None = None) -> None:
+    try:
+        ip = request.client.host if (request and request.client) else ""
+        db.add(models.AuditLog(user_id=user_id, event=event, ip_address=ip))
+        db.commit()
+    except Exception:
+        db.rollback()
 
 
 def _issue_tokens(db: DBSession, user: models.User, device_label: str) -> schemas.AuthTokens:
@@ -50,6 +59,7 @@ def signup(req: schemas.SignupRequest, db: DBSession = Depends(get_db)):
         email=req.email,
         password_hash=hash_password(req.password),
         name=req.name or req.email.split("@")[0],
+        phone=req.phone or "",
     )
     db.add(user)
     db.commit()
@@ -66,10 +76,32 @@ def signup(req: schemas.SignupRequest, db: DBSession = Depends(get_db)):
 
 
 @router.post("/login", response_model=schemas.AuthTokens)
-def login(req: schemas.LoginRequest, db: DBSession = Depends(get_db)):
+def login(req: schemas.LoginRequest, db: DBSession = Depends(get_db), request: Request = None):
     user = db.query(models.User).filter(models.User.email == req.email).first()
+
+    # Brute-force protection: reject while the account is locked.
+    now = dt.datetime.utcnow()
+    if user and user.locked_until and user.locked_until > now:
+        raise HTTPException(status_code=429, detail="Too many failed attempts. Try again later.")
+
     if not user or not verify_password(req.password, user.password_hash):
+        if user:
+            user.failed_login_count = (user.failed_login_count or 0) + 1
+            if user.failed_login_count >= 5:
+                user.locked_until = now + dt.timedelta(minutes=15)
+                user.failed_login_count = 0
+            db.commit()
+            _audit(db, user.id, "login_failed", request)
+        else:
+            _audit(db, None, "login_failed_unknown_email", request)
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # Success: reset counters.
+    user.failed_login_count = 0
+    user.locked_until = None
+    user.last_login_at = now
+    db.commit()
+    _audit(db, user.id, "login_success", request)
     return _issue_tokens(db, user, req.device_label)
 
 
@@ -159,8 +191,9 @@ def forgot_password(req: schemas.ForgotPasswordRequest, db: DBSession = Depends(
         sent = email_service.send_reset_link(user.email, token)
         if sent:
             return {"message": "If that email exists, a reset link has been sent to your email."}
-        # Dev mode: return the token so the app can display it
-        return {"message": "If that email exists, a reset link has been sent.", "dev_reset_token": token}
+        if not _IS_PROD:
+            return {"message": "If that email exists, a reset link has been sent.", "dev_reset_token": token}
+        raise HTTPException(status_code=503, detail="Email delivery is not configured on this server.")
     return {"message": "If that email exists, a reset link has been sent."}
 
 
@@ -199,7 +232,9 @@ def send_verification(user: models.User = Depends(get_current_user), db: DBSessi
     )
     if sent:
         return {"message": "Verification email sent. Check your inbox."}
-    return {"message": "Verification email sent", "dev_verify_token": token}
+    if not _IS_PROD:
+        return {"message": "Verification email sent", "dev_verify_token": token}
+    raise HTTPException(status_code=503, detail="Email delivery is not configured on this server.")
 
 
 @router.post("/verify-email")
@@ -222,14 +257,21 @@ def verify_email(req: schemas.VerifyEmailRequest, db: DBSession = Depends(get_db
 # ── OTP-based flows (email verification + password reset) ─────────────────
 @router.post("/request-otp")
 def request_otp(req: schemas.OtpRequest, db: DBSession = Depends(get_db)):
-    """Send a 6-digit OTP to the email for the given purpose."""
+    """Send a 6-digit OTP to the email or phone for the given purpose."""
     if req.purpose not in ("verify", "reset"):
         raise HTTPException(status_code=400, detail="Purpose must be 'verify' or 'reset'")
+    if not req.email and not req.phone:
+        raise HTTPException(status_code=400, detail="Provide an email or phone number.")
 
-    user = db.query(models.User).filter(models.User.email == req.email).first()
-    # Always return success to avoid leaking which emails exist
+    user = None
+    if req.email:
+        user = db.query(models.User).filter(models.User.email == req.email).first()
+    elif req.phone:
+        user = db.query(models.User).filter(models.User.phone == req.phone).first()
+
+    # Always return success to avoid leaking which accounts exist
     if not user:
-        return {"message": "If that email exists, an OTP has been sent."}
+        return {"message": "If that account exists, an OTP has been sent."}
 
     # Invalidate old OTPs
     db.query(models.EmailToken).filter(
@@ -246,14 +288,20 @@ def request_otp(req: schemas.OtpRequest, db: DBSession = Depends(get_db)):
     ))
     db.commit()
 
-    if req.purpose == "verify":
-        sent = email_service.send_verification_otp(user.email, otp)
-    else:
-        sent = email_service.send_reset_otp(user.email, otp)
+    sent = False
+    if req.email:
+        if req.purpose == "verify":
+            sent = email_service.send_verification_otp(user.email, otp)
+        else:
+            sent = email_service.send_reset_otp(user.email, otp)
+    if (not sent) and req.phone:
+        sent = sms_service.send_otp(req.phone, otp, req.purpose)
 
     if sent:
-        return {"message": "If that email exists, an OTP has been sent to your email."}
-    return {"message": "If that email exists, an OTP has been sent.", "dev_otp": otp}
+        return {"message": "If that account exists, an OTP has been sent."}
+    if not _IS_PROD:
+        return {"message": "If that account exists, an OTP has been sent.", "dev_otp": otp}
+    raise HTTPException(status_code=503, detail="Message delivery is not configured on this server.")
 
 
 @router.post("/verify-otp")

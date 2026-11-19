@@ -25,13 +25,19 @@ import os
 import uuid
 from datetime import datetime, timezone
 
-from .auth import JWT_SECRET
+from .auth import JWT_SECRET, _IS_PROD
 
 RECEIPT_VERSION = 1
 
 # Prefer a dedicated secret; fall back to the app JWT secret so local dev and
 # the pilot work without extra configuration. Never hardcode a real secret.
-_SECRET = (os.environ.get("RECEIPT_SECRET") or JWT_SECRET or "nexusshield-dev").encode()
+_env_receipt = os.environ.get("RECEIPT_SECRET")
+if _env_receipt:
+    _SECRET = _env_receipt.encode()
+elif _IS_PROD and not JWT_SECRET:
+    raise RuntimeError("RECEIPT_SECRET (or JWT_SECRET) must be set in production")
+else:
+    _SECRET = (JWT_SECRET or "nexusshield-dev").encode()
 
 
 def new_receipt_id() -> str:

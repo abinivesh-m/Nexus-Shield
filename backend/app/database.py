@@ -39,6 +39,26 @@ def init_db():
     Base.metadata.create_all(bind=engine)
 
 
+def migrate():
+    """Add columns that were introduced after the first deployment.
+
+    create_all() only creates missing *tables*, not missing *columns*, so
+    production databases need an explicit ALTER. Safe to run repeatedly.
+    """
+    if not _DATABASE_URL.startswith("postgresql"):
+        return
+    from sqlalchemy import text
+    statements = [
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR DEFAULT ''",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_count INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until TIMESTAMP",
+    ]
+    with engine.connect() as conn:
+        for stmt in statements:
+            conn.execute(text(stmt))
+        conn.commit()
+
+
 def get_db():
     db = SessionLocal()
     try:

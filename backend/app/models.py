@@ -32,6 +32,7 @@ class User(Base):
 
     id = Column(String, primary_key=True, default=gen_id)
     email = Column(String, unique=True, index=True, nullable=False)
+    phone = Column(String, default="", index=True)
     password_hash = Column(String, nullable=True)  # null if OAuth-only account
     name = Column(String, default="")
     photo_url = Column(String, default="")
@@ -54,6 +55,10 @@ class User(Base):
 
     created_at = Column(DateTime, default=now)
     last_login_at = Column(DateTime, nullable=True)
+
+    # Brute-force protection: lock the account after 5 failed attempts.
+    failed_login_count = Column(Integer, default=0)
+    locked_until = Column(DateTime, nullable=True)
 
     history = relationship("ScanHistory", back_populates="user", cascade="all, delete-orphan")
     reports = relationship("ScamReport", back_populates="reporter", cascade="all, delete-orphan")
@@ -304,3 +309,15 @@ class EnrichmentCache(Base):
     provider = Column(String, nullable=False)  # safe_browsing | virustotal | abuseipdb | hibp
     result_json = Column(JSON, default=dict)
     fetched_at = Column(DateTime, default=now)
+
+# --- Security audit trail -----------------------------------------------------
+class AuditLog(Base):
+    """Security-relevant events: logins, failures, deletions, admin actions."""
+    __tablename__ = "audit_logs"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    user_id = Column(String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    event = Column(String, nullable=False, index=True)
+    detail = Column(String, default="")
+    ip_address = Column(String, default="")
+    created_at = Column(DateTime, default=now)

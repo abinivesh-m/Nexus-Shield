@@ -9,6 +9,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/models.dart';
@@ -71,6 +72,9 @@ String friendlyError(Object e) {
 }
 
 class ApiService extends ChangeNotifier {
+  static const _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
   String? _accessToken;
   String? _refreshToken;
   UserProfile? _currentUser;
@@ -82,9 +86,21 @@ class ApiService extends ChangeNotifier {
 
   /// Call once at app startup to restore a saved session.
   Future<void> restoreSession() async {
+    // Migrate any tokens left in plain SharedPreferences by older builds.
     final prefs = await SharedPreferences.getInstance();
-    _accessToken = prefs.getString('access_token');
-    _refreshToken = prefs.getString('refresh_token');
+    final legacyAccess = prefs.getString('access_token');
+    final legacyRefresh = prefs.getString('refresh_token');
+    if (legacyAccess != null) {
+      await _secureStorage.write(key: 'access_token', value: legacyAccess);
+      if (legacyRefresh != null) {
+        await _secureStorage.write(key: 'refresh_token', value: legacyRefresh);
+      }
+      await prefs.remove('access_token');
+      await prefs.remove('refresh_token');
+    }
+
+    _accessToken = await _secureStorage.read(key: 'access_token');
+    _refreshToken = await _secureStorage.read(key: 'refresh_token');
     if (_accessToken != null) {
       try {
         _currentUser = await getProfile();
@@ -109,18 +125,16 @@ class ApiService extends ChangeNotifier {
   Future<void> _saveSession(String access, String refresh) async {
     _accessToken = access;
     _refreshToken = refresh;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('access_token', access);
-    await prefs.setString('refresh_token', refresh);
+    await _secureStorage.write(key: 'access_token', value: access);
+    await _secureStorage.write(key: 'refresh_token', value: refresh);
   }
 
   Future<void> _clearSession() async {
     _accessToken = null;
     _refreshToken = null;
     _currentUser = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('access_token');
-    await prefs.remove('refresh_token');
+    await _secureStorage.delete(key: 'access_token');
+    await _secureStorage.delete(key: 'refresh_token');
     notifyListeners();
   }
 
