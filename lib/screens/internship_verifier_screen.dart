@@ -77,6 +77,15 @@ class _InternshipVerifierScreenState extends State<InternshipVerifierScreen> {
     );
   }
 
+  Future<void> _copyReceiptLink(String id) async {
+    final url = context.read<ApiService>().receiptUrl(id);
+    await Clipboard.setData(ClipboardData(text: url));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Receipt link copied - anyone can open it')),
+    );
+  }
+
   Future<void> _sendFeedback(String actual) async {
     final r = _result;
     if (r == null || _feedbackBusy) return;
@@ -347,6 +356,12 @@ class _InternshipVerifierScreenState extends State<InternshipVerifierScreen> {
                 ),
               ),
               IconButton(
+                tooltip: 'Copy link for your placement cell',
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.link_rounded, size: 17, color: AppColors.textSec),
+                onPressed: () => _copyReceiptLink(id),
+              ),
+              IconButton(
                 tooltip: 'Copy receipt ID',
                 visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.copy_rounded, size: 16, color: AppColors.textSec),
@@ -365,8 +380,9 @@ class _InternshipVerifierScreenState extends State<InternshipVerifierScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Issued $issuedDate. Anyone with this ID can verify it - including your '
-            'placement cell. It can be revoked later if the offer turns out to be fake.',
+            'Issued $issuedDate. Share the link with your placement cell - they can '
+            'check it without an account. It can be revoked later if the offer '
+            'turns out to be fake.',
             style: GoogleFonts.inter(
               color: AppColors.textSec,
               fontSize: 11.5,

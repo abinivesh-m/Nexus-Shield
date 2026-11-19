@@ -63,6 +63,25 @@ def update_profile(
 
 @router.delete("/me")
 def delete_account(user: models.User = Depends(get_current_user), db: DBSession = Depends(get_db)):
+    uid = user.id
+    # Remove every row that still references this user before deleting it.
+    # The foreign keys do not cascade, so deleting the user first raises an
+    # IntegrityError (email_tokens, scan_history, family links, ...).
+    db.query(models.Session).filter(models.Session.user_id == uid).delete(synchronize_session=False)
+    db.query(models.EmailToken).filter(models.EmailToken.user_id == uid).delete(synchronize_session=False)
+    db.query(models.ScanHistory).filter(models.ScanHistory.user_id == uid).delete(synchronize_session=False)
+    db.query(models.ScamReport).filter(models.ScamReport.reporter_id == uid).delete(synchronize_session=False)
+    db.query(models.FamilyLink).filter(
+        (models.FamilyLink.guardian_id == uid) | (models.FamilyLink.member_id == uid)
+    ).delete(synchronize_session=False)
+    db.query(models.Notification).filter(models.Notification.user_id == uid).delete(synchronize_session=False)
+    db.query(models.InternshipFeedback).filter(models.InternshipFeedback.user_id == uid).delete(synchronize_session=False)
+    db.query(models.OfferReceipt).filter(models.OfferReceipt.user_id == uid).delete(synchronize_session=False)
+
+    user.organization_id = None
+    db.add(user)
+    db.flush()
+
     db.delete(user)
     db.commit()
     return {"message": "Account deleted"}

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../main.dart';
 import '../services/api_service.dart';
 import '../widgets/risk_meter.dart';
+import '../widgets/ui.dart';
 import '../widgets/lottie_result.dart';
 
 class TextAnalyzerScreen extends StatefulWidget {
@@ -23,8 +24,8 @@ class _TextAnalyzerScreenState extends State<TextAnalyzerScreen> {
   final List<String> _samples = [
     "Dear Sir, Your Aadhaar has been used for illegal activity. You are under digital arrest. Call 9876543210 immediately or face 7 years imprisonment.",
     "Congratulations! Your KYC update is pending. Your account will be blocked in 24 hours. Click: http://sbi-kyc-update.xyz to verify now.",
-    "You have won ₹25,00,000 in KBC Lottery. To claim, pay ₹5000 processing fee to account 1234567890 IFSC: HDFC0001234.",
-    "Hi, I'm Priya from HR. We have a part-time job opening — earn ₹5000/day by liking YouTube videos. Initial deposit ₹2000 for activation.",
+    "You have won â‚¹25,00,000 in KBC Lottery. To claim, pay â‚¹5000 processing fee to account 1234567890 IFSC: HDFC0001234.",
+    "Hi, I'm Priya from HR. We have a part-time job opening â€” earn â‚¹5000/day by liking YouTube videos. Initial deposit â‚¹2000 for activation.",
   ];
 
   Future<void> _analyze() async {
@@ -183,7 +184,7 @@ class _TextAnalyzerScreenState extends State<TextAnalyzerScreen> {
           children: [
             LottieResult(
               state: LottieState.scanning,
-              message: '🤖 AI is analyzing the message...',
+              message: 'ðŸ¤– AI is analyzing the message...',
             ),
             const SizedBox(height: 8),
             Text(
@@ -205,6 +206,10 @@ class _TextAnalyzerScreenState extends State<TextAnalyzerScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (r.degraded) ...[
+          const DegradedBanner(),
+          const SizedBox(height: 10),
+        ],
         // Risk header
         Container(
           padding: const EdgeInsets.all(18),
@@ -244,7 +249,7 @@ class _TextAnalyzerScreenState extends State<TextAnalyzerScreen> {
 
         if (r.redFlags.isNotEmpty) ...[
           const SizedBox(height: 14),
-          Text('🚩 Red Flags', style: GoogleFonts.inter(color: AppColors.textPrim, fontWeight: FontWeight.w700, fontSize: 14)),
+          Text('ðŸš© Red Flags', style: GoogleFonts.inter(color: AppColors.textPrim, fontWeight: FontWeight.w700, fontSize: 14)),
           const SizedBox(height: 8),
           ...r.redFlags.asMap().entries.map((e) => Container(
             margin: const EdgeInsets.only(bottom: 7),
@@ -253,7 +258,7 @@ class _TextAnalyzerScreenState extends State<TextAnalyzerScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('⚠️ ', style: TextStyle(fontSize: 13)),
+                const Text('âš ï¸ ', style: TextStyle(fontSize: 13)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,7 +283,7 @@ class _TextAnalyzerScreenState extends State<TextAnalyzerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('✅ What You Should Do', style: GoogleFonts.inter(color: AppColors.green, fontWeight: FontWeight.w700, fontSize: 13)),
+              Text('âœ… What You Should Do', style: GoogleFonts.inter(color: AppColors.green, fontWeight: FontWeight.w700, fontSize: 13)),
               const SizedBox(height: 6),
               Text(r.advice, style: GoogleFonts.inter(color: AppColors.textSec, fontSize: 13, height: 1.5)),
             ],
@@ -290,7 +295,7 @@ class _TextAnalyzerScreenState extends State<TextAnalyzerScreen> {
           width: double.infinity,
           child: OutlinedButton.icon(
             onPressed: () {
-              Clipboard.setData(ClipboardData(text: '⚠️ SCAM ALERT: ${r.scamType}\nRisk: ${r.riskScore}%\n${r.advice}'));
+              Clipboard.setData(ClipboardData(text: 'âš ï¸ SCAM ALERT: ${r.scamType}\nRisk: ${r.riskScore}%\n${r.advice}'));
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Alert copied to clipboard')));
             },
             icon: const Icon(Icons.share_outlined, size: 16, color: AppColors.textSec),

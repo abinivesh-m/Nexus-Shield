@@ -22,6 +22,8 @@ class AnalysisResult {
   final List<RedFlag> redFlags;
   final String advice;
   final bool matchedKnownScam;
+  /// True when the AI call failed and this result came from local rules.
+  final bool degraded;
 
   AnalysisResult({
     required this.riskScore,
@@ -31,6 +33,7 @@ class AnalysisResult {
     required this.redFlags,
     required this.advice,
     this.matchedKnownScam = false,
+    this.degraded = false,
   });
 
   factory AnalysisResult.fromJson(Map<String, dynamic> json) {
@@ -42,6 +45,7 @@ class AnalysisResult {
       redFlags: (json['red_flags'] as List? ?? []).map((f) => RedFlag.fromJson(f)).toList(),
       advice: json['advice'] ?? '',
       matchedKnownScam: json['matched_known_scam'] ?? false,
+      degraded: json['degraded'] == true,
     );
   }
 }
@@ -272,11 +276,14 @@ class CurrencyAnalysisResult {
   final bool likelyGenuine;
   final int confidencePercent;
   final List<String> reasons;
+  /// True when the AI check could not run at all. Never treat this as a verdict.
+  final bool unavailable;
 
   CurrencyAnalysisResult({
     required this.likelyGenuine,
     required this.confidencePercent,
     required this.reasons,
+    this.unavailable = false,
   });
 
   factory CurrencyAnalysisResult.fromJson(Map<String, dynamic> json) {
@@ -286,6 +293,7 @@ class CurrencyAnalysisResult {
           ? json['confidence_percent']
           : int.tryParse('${json['confidence_percent']}') ?? 0,
       reasons: (json['reasons'] as List? ?? []).map((e) => e.toString()).toList(),
+      unavailable: json['unavailable'] == true,
     );
   }
 }

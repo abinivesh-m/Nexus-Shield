@@ -435,6 +435,9 @@ class ApiService extends ChangeNotifier {
     return _decodeOrThrow(response) as Map<String, dynamic>;
   }
 
+  /// The human-readable page for a receipt, safe to send to a placement cell.
+  String receiptUrl(String receiptId) => '$_BASE_URL/r/$receiptId';
+
   // ── Counterfeit Currency Detection ────────────────────────────────────────
   Future<CurrencyAnalysisResult> analyzeCurrency(Uint8List bytes, {String language = 'en'}) async {
     final base64Image = base64Encode(bytes);
@@ -637,6 +640,17 @@ class ApiService extends ChangeNotifier {
           }),
         ));
     _decodeOrThrow(response);
+  }
+
+  /// Turns the alert feed for one family member on or off.
+  /// Returns the new state as reported by the server.
+  Future<bool> toggleFamilyAlerts(String linkId) async {
+    final response = await _authedRequest(() => http.patch(
+          Uri.parse('$_BASE_URL/family/members/$linkId/toggle'),
+          headers: _authHeaders,
+        ));
+    final data = _decodeOrThrow(response);
+    return (data is Map && data['alerts_enabled'] == true);
   }
 
   Future<void> removeFamilyMember(String linkId) async {

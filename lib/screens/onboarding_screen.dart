@@ -22,7 +22,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       iconColor: AppColors.brand,
       title: 'Stay protected\nfrom scams',
       subtitle:
-          'India loses over ₹1.25 lakh crore to scams every year.\nNexusShield uses AI to protect you in real time.',
+          'Indians lost ₹22,845 crore to cyber fraud in 2024.\nNexusShield uses AI to protect you in real time.',
       badge: '🇮🇳  Made for India',
     ),
     _OnboardPage(

@@ -183,6 +183,45 @@ class FlagQuality(unittest.TestCase):
         self.assertEqual(len(keys), len(set(keys)))
         self.assertLessEqual(len(r["red_flags"]), 5)
 
+    def test_free_form_model_wording_is_collapsed(self):
+        """Gemini does not reuse the rule labels. On production it returned
+        'Look-alike domain used for application' and 'Payment to personal UPI
+        ID' alongside the rule versions, which produced nine flags for five
+        findings. Any wording of the same finding must collapse to one."""
+
+        def _verbose(**kwargs):
+            return {
+                "risk_score": 95,
+                "verdict": "Likely scam",
+                "scam_type": "Job Scam",
+                "category": "Job Scam",
+                "summary": "x",
+                "advice": "y",
+                "red_flags": [
+                    {"flag": "Look-alike domain used for application", "detail": "m"},
+                    {"flag": "Payment to personal UPI ID", "detail": "m"},
+                    {"flag": "Free email provider used by recruiter", "detail": "m"},
+                    {"flag": "Unrealistic stipend with no experience", "detail": "m"},
+                    {"flag": "Upfront payment required to confirm the seat", "detail": "m"},
+                ],
+            }
+
+        r = analyse(SCAM_CLONE, ai=_verbose)
+        keys = [iv._flag_key(f["flag"]) for f in r["red_flags"]]
+        self.assertEqual(len(keys), len(set(keys)))
+        self.assertEqual(len(keys), 5, keys)
+
+    def test_unrelated_findings_are_not_merged(self):
+        """Collapsing must not hide genuinely different problems."""
+        keys = {
+            iv._flag_key("Free email provider"),
+            iv._flag_key("Unrealistic stipend"),
+            iv._flag_key("Recently registered domain"),
+            iv._flag_key("Company not found online"),
+            iv._flag_key("Unverified brand claim"),
+        }
+        self.assertEqual(len(keys), 5)
+
 
 class PrivacyRedaction(unittest.TestCase):
     def test_personal_data_is_removed_before_storage(self):

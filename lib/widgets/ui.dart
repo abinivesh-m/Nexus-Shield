@@ -649,3 +649,40 @@ class BrandWordmark extends StatelessWidget {
     );
   }
 }
+
+/// Shown when the AI service could not be reached and the result came from
+/// local rules. Deliberately visible: a fallback must never look like a full
+/// analysis.
+class DegradedBanner extends StatelessWidget {
+  const DegradedBanner({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.orange.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.orange.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.cloud_off_outlined, size: 16, color: AppColors.orange),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'The AI service is unavailable. This is a rule-based estimate, '
+              'not a full analysis.',
+              style: GoogleFonts.inter(
+                color: AppColors.textSec,
+                fontSize: 11.5,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

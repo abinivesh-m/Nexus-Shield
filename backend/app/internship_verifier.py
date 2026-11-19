@@ -369,9 +369,72 @@ def _cache_key(offer_text: str, language: str) -> str:
 
 
 def _flag_key(flag: str) -> str:
-    """Normalise a red-flag label so 'Registration Fee Requested' and
-    'Registration fee requested' are recognised as the same finding."""
-    return re.sub(r"[^a-z0-9]+", "", (flag or "").lower())
+    """Collapse a red-flag label to a canonical category.
+
+    The rule layer writes short labels ("Look-alike domain") while Gemini
+    writes its own phrasing ("Look-alike domain used for application"). Both
+    describe one finding and must not appear twice. Matching on exact text is
+    not enough, so each label is mapped onto a small set of categories.
+    """
+    s = re.sub(r"[^a-z0-9]+", " ", (flag or "").lower()).strip()
+
+    if ("registration" in s or "joining" in s or "security deposit" in s) and (
+        "fee" in s or "deposit" in s or "payment" in s
+    ):
+        return "registration_fee"
+    if "upfront" in s and ("payment" in s or "fee" in s):
+        return "registration_fee"
+    if "upi" in s:
+        return "upi_payment"
+    if (
+        "free email" in s
+        or "public email" in s
+        or "personal email" in s
+        or "gmail" in s
+        or "yahoo" in s
+        or "outlook" in s
+        or "hotmail" in s
+    ):
+        return "free_email"
+    if (
+        "look alike" in s
+        or "lookalike" in s
+        or "clone" in s
+        or "typosquat" in s
+        or "similar domain" in s
+    ):
+        return "lookalike_domain"
+    if "unrealistic" in s or "too high" in s or "excessive" in s or "inflated" in s:
+        return "unrealistic_stipend"
+    if (
+        "domain age" in s
+        or "recently registered" in s
+        or "newly registered" in s
+        or "new domain" in s
+    ):
+        return "new_domain"
+    if (
+        "not found" in s
+        or "no website" in s
+        or "does not exist" in s
+        or "cannot be verified" in s
+        or "unverified company" in s
+    ):
+        return "company_not_found"
+    if "mismatch" in s or "does not match" in s:
+        return "domain_mismatch"
+    if "brand" in s or "impersonat" in s or "name drop" in s:
+        return "brand_claim"
+    if "no interview" in s or "without interview" in s or "no formal interview" in s:
+        return "no_interview"
+
+    filler = {
+        "a", "an", "the", "is", "are", "was", "were", "of", "for", "to",
+        "in", "on", "with", "by", "used", "use", "uses", "using", "requested",
+        "request", "detected", "found", "present", "provider", "recruiter",
+        "application", "apply", "link", "url", "website",
+    }
+    return "".join(w for w in s.split() if w not in filler)
 
 
 def offer_hash(offer_text: str) -> str:

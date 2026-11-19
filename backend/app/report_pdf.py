@@ -6,6 +6,7 @@ attaching to a cybercrime complaint (e.g. on cybercrime.gov.in / NCRP).
 """
 import os
 import datetime as dt
+import tempfile
 from xml.sax.saxutils import escape as xml_escape
 
 from reportlab.lib.pagesizes import letter
@@ -16,8 +17,11 @@ from reportlab.lib import colors
 
 from . import models
 
-REPORTS_DIR = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "data", "generated_reports"
+# Serverless platforms mount the code directory read-only; /tmp is the only
+# writable path. Use a temp directory everywhere so the same code works
+# locally and on Vercel.
+REPORTS_DIR = os.environ.get("REPORTS_DIR") or os.path.join(
+    tempfile.gettempdir(), "nexusshield_reports"
 )
 os.makedirs(REPORTS_DIR, exist_ok=True)
 

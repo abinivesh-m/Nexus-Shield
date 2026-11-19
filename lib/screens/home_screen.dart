@@ -365,11 +365,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── Stats row ──────────────────────────────────────────────────────────
   Widget _buildStatsRow() {
+    // Every number here describes this app, not an invented user base.
     const stats = [
-      ('119', 'Contacts', AppColors.brand, Icons.people_alt_outlined),
-      ('9', 'Countries', AppColors.blue, Icons.public_rounded),
-      ('5', 'Scam types', AppColors.orange, Icons.warning_amber_rounded),
-      ('24/7', 'AI guard', AppColors.green, Icons.bolt_rounded),
+      ('9', 'Ways to check', AppColors.brand, Icons.grid_view_rounded),
+      ('1930', 'Cyber helpline', AppColors.green, Icons.call_outlined),
+      ('₹0', 'Cost to you', AppColors.blue, Icons.savings_outlined),
+      ('Signed', 'Verdict receipts', AppColors.orange, Icons.receipt_long_outlined),
     ];
     return Row(
       children: stats.asMap().entries.map((e) {

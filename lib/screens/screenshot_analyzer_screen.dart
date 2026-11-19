@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../main.dart';
 import '../services/api_service.dart';
 import '../widgets/risk_meter.dart';
+import '../widgets/ui.dart';
 
 class ScreenshotAnalyzerScreen extends StatefulWidget {
   const ScreenshotAnalyzerScreen({super.key});
@@ -106,7 +107,7 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
     );
   }
 
-  // ── Upload Area ────────────────────────────────────────────────────────
+  // â”€â”€ Upload Area â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildUploadArea() {
     if (_imageBytes != null) {
       return Stack(
@@ -201,7 +202,7 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'WhatsApp, SMS, Email, Call — any screenshot',
+              'WhatsApp, SMS, Email, Call â€” any screenshot',
               style: GoogleFonts.inter(
                 color: AppColors.textMuted,
                 fontSize: 12,
@@ -321,7 +322,7 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
     );
   }
 
-  // ── Analyze Button ─────────────────────────────────────────────────────
+  // â”€â”€ Analyze Button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildAnalyzeButton() {
     return SizedBox(
       width: double.infinity,
@@ -337,7 +338,7 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
     ).animate().fadeIn().slideY(begin: 0.2, end: 0);
   }
 
-  // ── Analyzing state ────────────────────────────────────────────────────
+  // â”€â”€ Analyzing state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildAnalyzingState() {
     return Center(
       child: Column(
@@ -348,7 +349,7 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            '🤖 AI is analyzing the screenshot...',
+            'ðŸ¤– AI is analyzing the screenshot...',
             style: GoogleFonts.inter(
               color: AppColors.textSec,
               fontSize: 14,
@@ -368,7 +369,7 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
     ).animate().fadeIn();
   }
 
-  // ── Result Card ────────────────────────────────────────────────────────
+  // â”€â”€ Result Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildResultCard() {
     final r = _result!;
     final riskColor = r.riskScore >= 75
@@ -385,6 +386,10 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (r.degraded) ...[
+          const DegradedBanner(),
+          const SizedBox(height: 10),
+        ],
         // Risk score
         Container(
           padding: const EdgeInsets.all(20),
@@ -453,7 +458,7 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
         // Red flags
         if (r.redFlags.isNotEmpty) ...[
           Text(
-            '🚩 Red Flags Detected',
+            'ðŸš© Red Flags Detected',
             style: GoogleFonts.inter(
               color: AppColors.textPrim,
               fontWeight: FontWeight.w700,
@@ -473,7 +478,7 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('⚠️ ', style: TextStyle(fontSize: 13)),
+                  const Text('âš ï¸ ', style: TextStyle(fontSize: 13)),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,7 +525,7 @@ class _ScreenshotAnalyzerScreenState extends State<ScreenshotAnalyzerScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '✅ What You Should Do',
+                'âœ… What You Should Do',
                 style: GoogleFonts.inter(
                   color: AppColors.green,
                   fontWeight: FontWeight.w700,

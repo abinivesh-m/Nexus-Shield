@@ -145,7 +145,21 @@ class _DangerZoneState extends State<_DangerZone> {
       ),
     );
     if (confirm == true) {
-      await context.read<ApiService>().deleteAccount();
+      final messenger = ScaffoldMessenger.of(context);
+      final navigator = Navigator.of(context);
+      try {
+        await context.read<ApiService>().deleteAccount();
+        if (!mounted) return;
+        navigator.popUntil((route) => route.isFirst);
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Your account and all records were deleted.')),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        messenger.showSnackBar(
+          SnackBar(content: Text(friendlyError(e))),
+        );
+      }
     }
   }
 

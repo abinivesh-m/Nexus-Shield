@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../main.dart';
 import '../services/api_service.dart';
 import '../widgets/risk_meter.dart';
+import '../widgets/ui.dart';
 import '../widgets/lottie_result.dart';
 
 class CallAnalyzerScreen extends StatefulWidget {
@@ -26,7 +27,7 @@ class _CallAnalyzerScreenState extends State<CallAnalyzerScreen> {
       "number has been used to send illegal parcels. There is an arrest warrant "
       "against your name. Do not disconnect this call or inform anyone. Switch on "
       "video and stay on the line. To verify you are not involved, transfer "
-      "₹50,000 to this RBI verification account within 30 minutes or a team will "
+      "â‚¹50,000 to this RBI verification account within 30 minutes or a team will "
       "arrive to arrest you.";
 
   Future<void> _analyze() async {
@@ -87,7 +88,7 @@ class _CallAnalyzerScreenState extends State<CallAnalyzerScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Paste the transcript of a suspicious call — especially calls claiming to be '
+          'Paste the transcript of a suspicious call â€” especially calls claiming to be '
           'police/CBI/customs/RBI demanding urgent payment ("digital arrest" scams). '
           'Our AI flags authority-impersonation and pressure tactics.',
           style: GoogleFonts.inter(color: AppColors.textSec, fontSize: 13, height: 1.5),
@@ -188,7 +189,7 @@ class _CallAnalyzerScreenState extends State<CallAnalyzerScreen> {
         padding: const EdgeInsets.symmetric(vertical: 20),
         child: Column(
           children: [
-            LottieResult(state: LottieState.scanning, message: '🤖 AI is analyzing the call...'),
+            LottieResult(state: LottieState.scanning, message: 'ðŸ¤– AI is analyzing the call...'),
             const SizedBox(height: 8),
             Text(
               'Checking for authority impersonation, urgency, and payment pressure',
@@ -209,6 +210,10 @@ class _CallAnalyzerScreenState extends State<CallAnalyzerScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (r.degraded) ...[
+          const DegradedBanner(),
+          const SizedBox(height: 10),
+        ],
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -247,7 +252,7 @@ class _CallAnalyzerScreenState extends State<CallAnalyzerScreen> {
 
         if (r.redFlags.isNotEmpty) ...[
           const SizedBox(height: 14),
-          Text('🚩 Red Flags', style: GoogleFonts.inter(color: AppColors.textPrim, fontWeight: FontWeight.w700, fontSize: 14)),
+          Text('ðŸš© Red Flags', style: GoogleFonts.inter(color: AppColors.textPrim, fontWeight: FontWeight.w700, fontSize: 14)),
           const SizedBox(height: 8),
           ...r.redFlags.asMap().entries.map((e) => Container(
             margin: const EdgeInsets.only(bottom: 7),
@@ -256,7 +261,7 @@ class _CallAnalyzerScreenState extends State<CallAnalyzerScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('⚠️ ', style: TextStyle(fontSize: 13)),
+                const Text('âš ï¸ ', style: TextStyle(fontSize: 13)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,7 +286,7 @@ class _CallAnalyzerScreenState extends State<CallAnalyzerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('✅ What You Should Do', style: GoogleFonts.inter(color: AppColors.green, fontWeight: FontWeight.w700, fontSize: 13)),
+              Text('âœ… What You Should Do', style: GoogleFonts.inter(color: AppColors.green, fontWeight: FontWeight.w700, fontSize: 13)),
               const SizedBox(height: 6),
               Text(r.advice, style: GoogleFonts.inter(color: AppColors.textSec, fontSize: 13, height: 1.5)),
             ],
@@ -293,7 +298,7 @@ class _CallAnalyzerScreenState extends State<CallAnalyzerScreen> {
           width: double.infinity,
           child: OutlinedButton.icon(
             onPressed: () {
-              Clipboard.setData(ClipboardData(text: '⚠️ SCAM CALL ALERT: ${r.scamType}\nRisk: ${r.riskScore}%\n${r.advice}'));
+              Clipboard.setData(ClipboardData(text: 'âš ï¸ SCAM CALL ALERT: ${r.scamType}\nRisk: ${r.riskScore}%\n${r.advice}'));
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Alert copied to clipboard')));
             },
             icon: const Icon(Icons.share_outlined, size: 16, color: AppColors.textSec),
@@ -317,7 +322,7 @@ class _CallAnalyzerScreenState extends State<CallAnalyzerScreen> {
         border: Border.all(color: AppColors.border),
       ),
       child: Text(
-        'Prototype notice: this analyzes a transcript you paste in after a call — it does not '
+        'Prototype notice: this analyzes a transcript you paste in after a call â€” it does not '
         'intercept or listen to live calls. Real-time in-call audio detection needs a native '
         'Android foreground service and telephony permissions, which is roadmap, not live here.',
         style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11.5, height: 1.4),

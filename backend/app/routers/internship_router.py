@@ -1,5 +1,8 @@
 """Internship / job offer verification endpoints."""
+import html
+
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session as DBSession
 
 from ..database import get_db
@@ -129,3 +132,142 @@ def get_receipt(receipt_id: str, db: DBSession = Depends(get_db)):
         "revoked_at": row.revoked_at,
         "evidence": row.evidence or [],
     }
+
+
+@router.get("/r/{receipt_id}", response_class=HTMLResponse, include_in_schema=False)
+def get_receipt_page(receipt_id: str, db: DBSession = Depends(get_db)):
+    """The same receipt as a page a person can read.
+
+    A placement officer should not have to read JSON to check a receipt. The
+    page is deliberately dependency-free: no scripts, no fonts, no tracking.
+    """
+    row = db.query(models.OfferReceipt).filter(models.OfferReceipt.id == receipt_id).first()
+    if not row:
+        return HTMLResponse(_render_receipt_page(None, receipt_id), status_code=404)
+
+    payload = receipts.build_payload(
+        row.id, row.issued_at, row.verdict, row.risk_score,
+        row.employer_domain, row.company_verified, row.offer_hash,
+    )
+    return HTMLResponse(
+        _render_receipt_page(row, receipt_id, receipts.verify(payload, row.signature))
+    )
+
+
+def _render_receipt_page(row, receipt_id: str, signature_ok: bool = False) -> str:
+    """Self-contained HTML. Every dynamic value is escaped."""
+    esc = html.escape
+
+    if row is None:
+        headline = "Receipt not found"
+        status = "No receipt with this ID exists"
+        accent = "#EF4444"
+        rows = ""
+        note = (
+            "Check the ID. Receipt IDs look like NS-7F3A9C21D0 and are printed "
+            "on the verification result in the NexusShield app."
+        )
+    else:
+        verdict = (row.verdict or "").lower()
+        if not signature_ok:
+            headline = "This receipt is not authentic"
+            status = "Signature check failed"
+            accent = "#EF4444"
+            note = (
+                "The stored signature does not match the receipt contents. "
+                "Treat it as forged and verify the offer again."
+            )
+        elif row.revoked:
+            headline = "Do not proceed"
+            status = "Revoked"
+            accent = "#EF4444"
+            note = (
+                "This verdict was withdrawn after the offer was confirmed as "
+                "fraud"
+                + (f": {esc(row.revoked_reason)}" if row.revoked_reason else "")
+                + ". Ask the student for a fresh verification."
+            )
+        elif "scam" in verdict:
+            headline = "Flagged as a scam"
+            status = "Verified receipt"
+            accent = "#EF4444"
+            note = "Do not pay any fee, share documents, or send money to this offer."
+        elif "genuine" in verdict:
+            headline = "Checked and likely genuine"
+            status = "Verified receipt"
+            accent = "#14B8A6"
+            note = (
+                "This is an evidence record, not a guarantee. Confirm the offer "
+                "on the employer's own website before paying anything."
+            )
+        else:
+            headline = "Needs caution"
+            status = "Verified receipt"
+            accent = "#F59E0B"
+            note = (
+                "The verifier could not confirm this offer either way. Treat it "
+                "as unverified until the employer confirms it directly."
+            )
+
+        issued = row.issued_at
+        issued_text = issued.strftime("%d %b %Y, %H:%M UTC") if issued else "-"
+        domain = row.employer_domain or "Not verified"
+        rows = f"""
+        <div class="row"><span>Receipt</span><b>{esc(row.id)}</b></div>
+        <div class="row"><span>Issued</span><b>{esc(issued_text)}</b></div>
+        <div class="row"><span>Verdict</span><b>{esc(row.verdict or '-')}</b></div>
+        <div class="row"><span>Risk score</span><b>{int(row.risk_score or 0)} / 100</b></div>
+        <div class="row"><span>Employer domain</span><b>{esc(domain)}</b></div>
+        <div class="row"><span>Company verified</span><b>{"Yes" if row.company_verified else "No"}</b></div>
+        <div class="row"><span>Signature</span><b>{"Valid" if signature_ok else "Invalid"}</b></div>
+        """
+
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>NexusShield receipt {esc(receipt_id)}</title>
+<style>
+  :root {{ color-scheme: dark; }}
+  * {{ box-sizing: border-box; }}
+  body {{ margin: 0; padding: 28px 16px; background: #070B14; color: #E6EDF7;
+         font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }}
+  main {{ max-width: 520px; margin: 0 auto; }}
+  .brand {{ display: flex; align-items: center; gap: 10px; margin-bottom: 22px;
+            font-weight: 800; letter-spacing: -.2px; }}
+  .dot {{ width: 12px; height: 12px; border-radius: 50%; background: {accent}; }}
+  .card {{ background: #0E1420; border: 1px solid #1E2A3A; border-radius: 18px; padding: 22px; }}
+  .status {{ display: inline-block; padding: 4px 10px; border-radius: 999px;
+             font-size: 12px; font-weight: 700; color: {accent};
+             background: {accent}1F; border: 1px solid {accent}44; }}
+  h1 {{ font-size: 26px; line-height: 1.2; margin: 14px 0 6px; letter-spacing: -.6px; }}
+  .note {{ color: #9FB0C6; font-size: 13.5px; margin: 0 0 20px; }}
+  .rows {{ border-top: 1px solid #1E2A3A; }}
+  .row {{ display: flex; justify-content: space-between; gap: 16px;
+          padding: 10px 0; border-bottom: 1px solid #1E2A3A; font-size: 13.5px; }}
+  .row span {{ color: #8A9BB1; }}
+  .row b {{ text-align: right; word-break: break-word; }}
+  footer {{ color: #6B7C91; font-size: 11.5px; line-height: 1.6; margin-top: 18px; }}
+  a {{ color: #22D3EE; }}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand"><span class="dot"></span>NexusShield</div>
+  <div class="card">
+    <span class="status">{esc(status)}</span>
+    <h1>{esc(headline)}</h1>
+    <p class="note">{note}</p>
+    <div class="rows">{rows}</div>
+  </div>
+  <footer>
+    A NexusShield receipt records the verdict issued at a point in time. It can be
+    revoked if the offer is later confirmed as fraud, so always open the link
+    again rather than trusting a screenshot.
+    Questions or a data request: <a href="mailto:abinivesh.1203@gmail.com">abinivesh.1203@gmail.com</a>
+  </footer>
+</main>
+</body>
+</html>"""

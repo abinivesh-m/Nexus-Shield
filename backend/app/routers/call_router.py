@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session as DBSession
 from ..database import get_db
 from .. import models, schemas, ai_engine
 from ..deps import get_current_user
-from .analysis_router import _save_history
+from .analysis_router import _save_history, _heuristic_result
 
 router = APIRouter(tags=["call-analysis"])
 
@@ -30,8 +30,8 @@ def analyze_call(
         raise HTTPException(status_code=400, detail="Provide a call transcript to analyze.")
     try:
         result = ai_engine.analyze_call_transcript(req.transcript, req.caller_number, req.language)
-        preview = f"[call from {req.caller_number}] {req.transcript}" if req.caller_number else req.transcript
-        _save_history(db, user, "call_transcript", preview, result, False, req.language)
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        result = _heuristic_result("call", req.transcript, req.language)
+    preview = f"[call from {req.caller_number}] {req.transcript}" if req.caller_number else req.transcript
+    _save_history(db, user, "call_transcript", preview, result, False, req.language)
+    return result

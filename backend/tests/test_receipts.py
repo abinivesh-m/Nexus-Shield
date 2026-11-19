@@ -99,6 +99,42 @@ class ReceiptIntegrity(ReceiptTestCase):
         self.assertNotIn("private message", str(view))
 
 
+class ReceiptPage(ReceiptTestCase):
+    """The link a placement officer opens. It must be readable, not JSON."""
+
+    def test_page_shows_the_receipt(self):
+        issued = self._issue()
+        response = internship_router.get_receipt_page(issued["id"], self.db)
+        body = response.body.decode()
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("<!doctype html>", body)
+        self.assertIn(issued["id"], body)
+        self.assertIn("Checked and likely genuine", body)
+        self.assertIn("hackerrank.com", body)
+
+    def test_revoked_page_tells_the_reader_to_stop(self):
+        issued = self._issue()
+        row = self.db.query(models.OfferReceipt).filter_by(id=issued["id"]).first()
+        row.revoked = True
+        row.revoked_reason = "Confirmed clone campaign"
+        self.db.commit()
+
+        body = internship_router.get_receipt_page(issued["id"], self.db).body.decode()
+        self.assertIn("Do not proceed", body)
+        self.assertIn("Confirmed clone campaign", body)
+
+    def test_unknown_receipt_page_is_a_404(self):
+        response = internship_router.get_receipt_page("NS-NOTAREAL1", self.db)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("Receipt not found", response.body.decode())
+
+    def test_page_escapes_stored_values(self):
+        issued = self._issue(domain="<script>alert(1)</script>")
+        body = internship_router.get_receipt_page(issued["id"], self.db).body.decode()
+        self.assertNotIn("<script>alert(1)</script>", body)
+        self.assertIn("&lt;script&gt;", body)
+
+
 class RetroactiveRevocation(ReceiptTestCase):
     def test_revocation_by_offer_hash_hits_every_receipt(self):
         first = self._issue()

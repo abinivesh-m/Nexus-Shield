@@ -5,7 +5,7 @@ photographed banknote. This is explicitly a hackathon-prototype feature, not
 a certified authentication system -- see the disclaimer baked into the
 prompt in ai_engine.py and surfaced in the Flutter UI.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session as DBSession
 
 from ..database import get_db
@@ -23,7 +23,19 @@ def analyze_currency(
 ):
     try:
         result = ai_engine.analyze_currency_image(req.image_base64, req.language)
+    except Exception:
+        # Never guess at a banknote. Say the check did not run.
+        return {
+            "unavailable": True,
+            "likely_genuine": False,
+            "confidence_percent": 0,
+            "reasons": [
+                "The AI currency check is temporarily unavailable. "
+                "Please try again in a few minutes."
+            ],
+        }
 
+    try:
         # Log to history alongside screenshot/text/url scans so it shows up
         # in the user's existing scan history and personal analytics.
         history = models.ScanHistory(
@@ -45,7 +57,9 @@ def analyze_currency(
         )
         db.add(history)
         db.commit()
+    except Exception:
+        # A history failure must not throw away a result the user waited for.
+        db.rollback()
 
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    result["unavailable"] = False
+    return result

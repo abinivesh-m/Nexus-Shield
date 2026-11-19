@@ -15,6 +15,8 @@ class FamilyScreen extends StatefulWidget {
 class _FamilyScreenState extends State<FamilyScreen> {
   List<FamilyMember>? _members;
   List<Map<String, dynamic>> _alerts = [];
+  /// Link ids whose alert feed the server currently reports as disabled.
+  Set<String> _alertsOff = {};
   bool _loading = true;
 
   @override
@@ -30,7 +32,14 @@ class _FamilyScreenState extends State<FamilyScreen> {
       final members = await api.getFamilyMembers();
       final alerts = await api.getFamilyAlerts();
       if (!mounted) return;
-      setState(() { _members = members; _alerts = alerts; });
+      setState(() {
+        _members = members;
+        _alerts = alerts;
+        _alertsOff = {
+          for (final m in members)
+            if (!m.alertsEnabled) m.id,
+        };
+      });
     } catch (_) {
       if (mounted) setState(() => _members = []);
     } finally {
@@ -82,6 +91,43 @@ class _FamilyScreenState extends State<FamilyScreen> {
     _load();
   }
 
+  /// Flips one member's alert feed. The switch moves immediately and rolls
+  /// back if the server rejects the change.
+  Future<void> _toggleAlerts(FamilyMember m) async {
+    final wasOff = _alertsOff.contains(m.id);
+    setState(() {
+      if (wasOff) {
+        _alertsOff.remove(m.id);
+      } else {
+        _alertsOff.add(m.id);
+      }
+    });
+    try {
+      final enabled =
+          await context.read<ApiService>().toggleFamilyAlerts(m.id);
+      if (!mounted) return;
+      setState(() {
+        if (enabled) {
+          _alertsOff.remove(m.id);
+        } else {
+          _alertsOff.add(m.id);
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        if (wasOff) {
+          _alertsOff.add(m.id);
+        } else {
+          _alertsOff.remove(m.id);
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(friendlyError(e))),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -121,7 +167,25 @@ class _FamilyScreenState extends State<FamilyScreen> {
                             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                               Text(m.memberLabel, style: GoogleFonts.inter(color: AppColors.textPrim, fontWeight: FontWeight.w600)),
                               if (m.memberEmail != null) Text(m.memberEmail!, style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12)),
+                              Text(
+                                _alertsOff.contains(m.id)
+                                    ? 'Alerts paused'
+                                    : 'Alerts at ${m.minRiskToAlert}% risk or higher',
+                                style: GoogleFonts.inter(
+                                  color: _alertsOff.contains(m.id)
+                                      ? AppColors.textMuted
+                                      : AppColors.green,
+                                  fontSize: 11,
+                                ),
+                              ),
                             ])),
+                            Switch(
+                              value: !_alertsOff.contains(m.id),
+                              onChanged: (_) => _toggleAlerts(m),
+                              activeColor: AppColors.brand,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                            ),
                             IconButton(icon: const Icon(Icons.close, color: AppColors.textMuted, size: 18), onPressed: () => _remove(m.id)),
                           ]),
                         )),

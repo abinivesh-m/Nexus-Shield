@@ -202,10 +202,17 @@ class _CurrencyScannerScreenState extends State<CurrencyScannerScreen> {
 
   Widget _buildResultCard() {
     final r = _result!;
+    final unavailable = r.unavailable;
     final isGenuine = r.likelyGenuine;
-    final color = isGenuine ? AppColors.green : AppColors.orange;
-    final icon = isGenuine ? Icons.check_circle : Icons.warning_amber_rounded;
-    final label = isGenuine ? 'Genuine Note' : 'Potential Counterfeit';
+    final color = unavailable
+        ? AppColors.textMuted
+        : (isGenuine ? AppColors.green : AppColors.orange);
+    final icon = unavailable
+        ? Icons.cloud_off_outlined
+        : (isGenuine ? Icons.check_circle : Icons.warning_amber_rounded);
+    final label = unavailable
+        ? 'Check did not run'
+        : (isGenuine ? 'Genuine Note' : 'Potential Counterfeit');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,7 +235,10 @@ class _CurrencyScannerScreenState extends State<CurrencyScannerScreen> {
                     Text(label,
                         style: GoogleFonts.inter(color: AppColors.textPrim, fontWeight: FontWeight.w800, fontSize: 16)),
                     const SizedBox(height: 4),
-                    Text('${r.confidencePercent}% confidence',
+                    Text(
+                        unavailable
+                            ? 'No result — please try again later'
+                            : '${r.confidencePercent}% confidence',
                         style: GoogleFonts.inter(color: color, fontWeight: FontWeight.w700, fontSize: 13)),
                   ],
                 ),

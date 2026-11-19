@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../main.dart';
 import '../services/api_service.dart';
 import '../widgets/risk_meter.dart';
+import '../widgets/ui.dart';
 import '../widgets/lottie_result.dart';
 
 class UrlCheckerScreen extends StatefulWidget {
@@ -80,7 +81,7 @@ class _UrlCheckerScreenState extends State<UrlCheckerScreen> {
               Center(
                 child: LottieResult(
                   state: LottieState.scanning,
-                  message: '🔍 Scanning domain...',
+                  message: 'ðŸ” Scanning domain...',
                 ),
               ).animate().fadeIn(),
             ],
@@ -138,6 +139,10 @@ class _UrlCheckerScreenState extends State<UrlCheckerScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (r.degraded) ...[
+          const DegradedBanner(),
+          const SizedBox(height: 10),
+        ],
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -205,10 +210,10 @@ class _UrlCheckerScreenState extends State<UrlCheckerScreen> {
 
   Widget _buildTips() {
     final tips = [
-      ('🚫', 'Never click links in unsolicited messages'),
-      ('🔍', 'Check if the domain ends with .gov.in for govt sites'),
-      ('🔒', 'Ensure HTTPS before entering any personal info'),
-      ('📵', 'When in doubt, do not proceed — call the official number'),
+      ('ðŸš«', 'Never click links in unsolicited messages'),
+      ('ðŸ”', 'Check if the domain ends with .gov.in for govt sites'),
+      ('ðŸ”’', 'Ensure HTTPS before entering any personal info'),
+      ('ðŸ“µ', 'When in doubt, do not proceed â€” call the official number'),
     ];
     return Container(
       padding: const EdgeInsets.all(16),
@@ -216,7 +221,7 @@ class _UrlCheckerScreenState extends State<UrlCheckerScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('🛡️ Safety Tips', style: GoogleFonts.inter(color: AppColors.textPrim, fontWeight: FontWeight.w700, fontSize: 14)),
+          Text('ðŸ›¡ï¸ Safety Tips', style: GoogleFonts.inter(color: AppColors.textPrim, fontWeight: FontWeight.w700, fontSize: 14)),
           const SizedBox(height: 10),
           ...tips.map((t) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
