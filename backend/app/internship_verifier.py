@@ -368,6 +368,45 @@ def _cache_key(offer_text: str, language: str) -> str:
         ("v2|" + offer_text.strip().lower() + "|" + language).encode()).hexdigest()
 
 
+def _flag_key(flag: str) -> str:
+    """Normalise a red-flag label so 'Registration Fee Requested' and
+    'Registration fee requested' are recognised as the same finding."""
+    return re.sub(r"[^a-z0-9]+", "", (flag or "").lower())
+
+
+def offer_hash(offer_text: str) -> str:
+    """Stable, non-reversible fingerprint of an offer.
+
+    Used to link a feedback row back to the verdict it corrects without
+    storing the student's message. Language-independent on purpose: the same
+    offer in English and Tamil should map to the same fingerprint.
+    """
+    normalised = " ".join((offer_text or "").split()).lower()
+    return hashlib.sha256(normalised.encode()).hexdigest()
+
+
+# Order matters: a UPI id looks like an email address, so redact it first.
+_REDACTIONS = (
+    (re.compile(r"\b[\w.\-]{2,}@(?:ybl|paytm|okhdfcbank|okicici|oksbi|axl|upi|apl)\b", re.I), "[upi]"),
+    (re.compile(r"[\w.+-]+@(?:[\w-]+\.)+[a-z]{2,}", re.I), "[email]"),
+    (re.compile(r"\b(?:\+?91[\s-]?)?[6-9]\d{9}\b"), "[phone]"),
+    (re.compile(r"https?://\S+", re.I), "[link]"),
+)
+
+
+def redact_offer_text(text: str) -> str:
+    """Remove personal data before an offer is written to history.
+
+    Students paste real messages containing their own phone number, email and
+    UPI id. The verdict does not need any of that, so it never gets stored.
+    """
+    cleaned = text or ""
+    for pattern, replacement in _REDACTIONS:
+        cleaned = pattern.sub(replacement, cleaned)
+    return cleaned
+
+
+
 def _fallback_result(offer_text, fields, official_domain, domain_match, red_flags,
                      language, verified_employer=False, low_confidence=False):
     """Rule-based verdict used when Gemini is unavailable (quota/network)."""
@@ -522,11 +561,12 @@ def run(offer_text: str, language: str = "en") -> dict:
                                   low_confidence)
     else:
         ai_flags = result.get("red_flags", [])
-        existing = {f.get("flag") for f in red_flags}
+        existing = {_flag_key(f.get("flag")) for f in red_flags}
         for f in ai_flags:
-            if f.get("flag") not in existing:
+            key = _flag_key(f.get("flag"))
+            if key and key not in existing:
                 red_flags.append(f)
-                existing.add(f.get("flag"))
+                existing.add(key)
         result["red_flags"] = red_flags
         result.setdefault("company_name", company or (result.get("company_name") or ""))
         result["company_verified"] = verified_employer

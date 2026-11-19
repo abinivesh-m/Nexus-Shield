@@ -155,6 +155,144 @@ def delete_scam_db_entry(entry_id: str, admin: models.User = Depends(get_current
     return {"message": "Deleted"}
 
 
+# ── Internship pilot accuracy ────────────────────────────────────────────────
+def _verdict_bucket(verdict: str) -> str:
+    """Collapse free-text verdicts into the two decisions we can score."""
+    text = (verdict or "").lower()
+    if "scam" in text:
+        return "scam"
+    if "genuine" in text or "safe" in text:
+        return "genuine"
+    return "other"
+
+
+@router.get("/internship/feedback")
+def internship_feedback_summary(
+    admin: models.User = Depends(get_current_admin),
+    db: DBSession = Depends(get_db),
+):
+    """Precision / recall of the internship verifier on real offers.
+
+    A "positive" is a scam verdict. Precision answers "when we said scam, how
+    often were we right?" - the number that decides whether a student can
+    trust the tool. Recall answers "of the real scams, how many did we catch?"
+    """
+    rows = (
+        db.query(models.InternshipFeedback)
+        .order_by(models.InternshipFeedback.created_at.desc())
+        .all()
+    )
+
+    tp = fp = fn = tn = 0
+    disagreements = []
+    for row in rows:
+        predicted = _verdict_bucket(row.predicted_verdict)
+        actual = _verdict_bucket(row.actual_verdict)
+        if predicted == "scam" and actual == "scam":
+            tp += 1
+        elif predicted == "scam" and actual == "genuine":
+            fp += 1
+        elif predicted == "genuine" and actual == "scam":
+            fn += 1
+        elif predicted == "genuine" and actual == "genuine":
+            tn += 1
+
+        if predicted in ("scam", "genuine") and actual in ("scam", "genuine") \
+                and predicted != actual:
+            disagreements.append({
+                "id": row.id,
+                "predicted_verdict": row.predicted_verdict,
+                "predicted_score": row.predicted_score,
+                "actual_verdict": row.actual_verdict,
+                "reason": row.reason,
+                "notes": row.notes,
+                "offer_hash": row.offer_hash,
+                "created_at": row.created_at,
+            })
+
+    def _ratio(num: int, den: int):
+        return round(num / den, 4) if den else None
+
+    scored = tp + fp + fn + tn
+    return {
+        "total_feedback": len(rows),
+        "scored": scored,
+        "confusion": {
+            "true_positive": tp,
+            "false_positive": fp,
+            "false_negative": fn,
+            "true_negative": tn,
+        },
+        "precision": _ratio(tp, tp + fp),
+        "recall": _ratio(tp, tp + fn),
+        "false_positive_rate": _ratio(fp, fp + tn),
+        "accuracy": _ratio(tp + tn, scored),
+        "disagreements": disagreements[:100],
+    }
+
+
+# ── Verified offer receipts ──────────────────────────────────────────────────
+@router.get("/receipts")
+def list_receipts(
+    revoked: bool | None = None,
+    admin: models.User = Depends(get_current_admin),
+    db: DBSession = Depends(get_db),
+):
+    query = db.query(models.OfferReceipt)
+    if revoked is not None:
+        query = query.filter(models.OfferReceipt.revoked == revoked)
+    rows = query.order_by(models.OfferReceipt.issued_at.desc()).limit(200).all()
+    return [
+        {
+            "id": r.id,
+            "verdict": r.verdict,
+            "risk_score": r.risk_score,
+            "employer_domain": r.employer_domain,
+            "company_verified": r.company_verified,
+            "offer_hash": r.offer_hash,
+            "issued_at": r.issued_at,
+            "revoked": r.revoked,
+            "revoked_reason": r.revoked_reason,
+        }
+        for r in rows
+    ]
+
+
+@router.post("/receipts/revoke")
+def revoke_receipts(
+    req: schemas.ReceiptRevokeRequest,
+    admin: models.User = Depends(get_current_admin),
+    db: DBSession = Depends(get_db),
+):
+    """Retroactively invalidate receipts.
+
+    Revoking by `offer_hash` is the important case: one confirmed scam
+    invalidates every receipt ever issued for that same offer, including
+    ones already sitting in students' chats.
+    """
+    if not req.receipt_id and not req.offer_hash:
+        raise HTTPException(status_code=400, detail="Provide receipt_id or offer_hash")
+
+    query = db.query(models.OfferReceipt)
+    if req.receipt_id:
+        query = query.filter(models.OfferReceipt.id == req.receipt_id)
+    else:
+        query = query.filter(models.OfferReceipt.offer_hash == req.offer_hash)
+
+    rows = query.all()
+    if not rows:
+        raise HTTPException(status_code=404, detail="No matching receipt")
+
+    stamp = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
+    for row in rows:
+        row.revoked = True
+        row.revoked_reason = (req.reason or "Revoked by administrator")[:240]
+        row.revoked_at = stamp
+    db.commit()
+
+    return {"revoked": len(rows), "reason": rows[0].revoked_reason}
+
+
 # ── Platform-wide analytics ──────────────────────────────────────────────────
 @router.get("/analytics")
 def platform_analytics(admin: models.User = Depends(get_current_admin), db: DBSession = Depends(get_db)):

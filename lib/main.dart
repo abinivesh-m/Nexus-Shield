@@ -1,11 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'screens/home_screen.dart';
 import 'screens/splash_screen.dart';
-import 'screens/onboarding_screen.dart';
 import 'screens/screenshot_analyzer_screen.dart';
 import 'screens/text_analyzer_screen.dart';
 import 'screens/url_checker_screen.dart';
@@ -43,7 +42,7 @@ class AppColors {
   static const surface2  = Color(0xFF182338);
   static const border    = Color(0xFF22304A);
 
-  // Brand — Aurora (teal → cyan)
+  // Brand â€” Aurora (teal â†’ cyan)
   static const brand      = Color(0xFF14B8A6);
   static const brandLight = Color(0xFF5EEAD4);
   static const brandDeep  = Color(0xFF0E7490);

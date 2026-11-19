@@ -158,6 +158,52 @@ class AmbiguousIsHonest(unittest.TestCase):
         self.assertNotEqual(r["verdict"], "Likely genuine")
 
 
+class FlagQuality(unittest.TestCase):
+    def test_model_and_rule_flags_are_not_duplicated(self):
+        """The model writes Title Case, the rules write sentence case. They are
+        the same finding and must appear once."""
+
+        def _duplicate(**kwargs):
+            return {
+                "risk_score": 90,
+                "verdict": "Likely scam",
+                "scam_type": "Job Scam",
+                "category": "Job Scam",
+                "summary": "x",
+                "advice": "y",
+                "red_flags": [
+                    {"flag": "Registration Fee Requested", "detail": "model"},
+                    {"flag": "Look-alike Domain", "detail": "model"},
+                    {"flag": "Free Email Provider", "detail": "model"},
+                ],
+            }
+
+        r = analyse(SCAM_CLONE, ai=_duplicate)
+        keys = [iv._flag_key(f["flag"]) for f in r["red_flags"]]
+        self.assertEqual(len(keys), len(set(keys)))
+        self.assertLessEqual(len(r["red_flags"]), 5)
+
+
+class PrivacyRedaction(unittest.TestCase):
+    def test_personal_data_is_removed_before_storage(self):
+        text = (
+            "Call 9876543210 or mail hr@acme.com, pay to hr@ybl, "
+            "see https://acme-jobs.xyz/apply"
+        )
+        cleaned = iv.redact_offer_text(text)
+        for secret in ("9876543210", "hr@acme.com", "hr@ybl", "acme-jobs.xyz"):
+            self.assertNotIn(secret, cleaned)
+        self.assertIn("[phone]", cleaned)
+        self.assertIn("[email]", cleaned)
+        self.assertIn("[upi]", cleaned)
+        self.assertIn("[link]", cleaned)
+
+    def test_redaction_keeps_the_rest_of_the_offer(self):
+        cleaned = iv.redact_offer_text("HackerRank Campus Crew, stipend Rs 15000/month")
+        self.assertIn("HackerRank Campus Crew", cleaned)
+        self.assertIn("15000", cleaned)
+
+
 class DomainHelpers(unittest.TestCase):
     def test_registrable(self):
         self.assertEqual(iv._registrable("mail.hackerrank.com"), "hackerrank.com")

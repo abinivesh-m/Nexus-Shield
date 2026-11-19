@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../main.dart';
 
+/// National scam picture, with every number traceable to a published source.
+///
+/// This screen deliberately contains no invented statistics. An earlier
+/// version showed a fabricated category split, a fabricated monthly bar chart
+/// and fabricated state counts. In a security product that is worse than
+/// showing nothing: it looks like intelligence and is not.
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
+
+  // Source: Ministry of Home Affairs / I4C, figures released July 2025.
+  static const String _source =
+      'Source: Ministry of Home Affairs / I4C (2024 data, released July 2025)';
 
   @override
   Widget build(BuildContext context) {
@@ -19,21 +29,41 @@ class DashboardScreen extends StatelessWidget {
           children: [
             _buildHeader(),
             const SizedBox(height: 20),
-            _buildTopStats(),
+            _buildTopStats(context),
+            const SizedBox(height: 8),
+            Text(
+              _source,
+              style: GoogleFonts.inter(
+                color: AppColors.textMuted,
+                fontSize: 10.5,
+                height: 1.4,
+              ),
+            ),
             const SizedBox(height: 24),
-            _sectionTitle('Scam Type Distribution'),
+            _sectionTitle('Scams that reach students'),
+            const SizedBox(height: 4),
+            Text(
+              'These four account for most of what students report to us.',
+              style: GoogleFonts.inter(
+                color: AppColors.textMuted,
+                fontSize: 11.5,
+              ),
+            ),
             const SizedBox(height: 12),
-            _buildPieChart(),
+            ..._buildScamCards(),
             const SizedBox(height: 24),
-            _sectionTitle('Monthly Scam Reports (India)'),
-            const SizedBox(height: 12),
-            _buildBarChart(),
-            const SizedBox(height: 24),
-            _sectionTitle('Most Targeted States'),
-            const SizedBox(height: 12),
-            _buildStateList(),
-            const SizedBox(height: 24),
-            _buildReportCard(),
+            _buildReportCard(context),
+            const SizedBox(height: 16),
+            Text(
+              'NexusShield does not estimate national totals. Numbers on this '
+              'screen come from published government data, and the rest is '
+              'described in words rather than invented percentages.',
+              style: GoogleFonts.inter(
+                color: AppColors.textMuted,
+                fontSize: 10.5,
+                height: 1.5,
+              ),
+            ),
           ],
         ),
       ),
@@ -45,7 +75,10 @@ class DashboardScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.brand.withValues(alpha: 0.12), AppColors.orange.withValues(alpha: 0.08)],
+          colors: [
+            AppColors.brand.withValues(alpha: 0.12),
+            AppColors.orange.withValues(alpha: 0.08),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -59,7 +92,7 @@ class DashboardScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '₹11,269 Crore',
+                  '₹22,845 Crore',
                   style: GoogleFonts.inter(
                     color: AppColors.brand,
                     fontWeight: FontWeight.w900,
@@ -67,10 +100,11 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Lost to cyber fraud in India (2023)',
+                  'Lost to cyber fraud in India in 2024 - up 206% on 2023',
                   style: GoogleFonts.inter(
                     color: AppColors.textSec,
                     fontSize: 12,
+                    height: 1.35,
                   ),
                 ),
               ],
@@ -82,12 +116,12 @@ class DashboardScreen extends StatelessWidget {
     ).animate().fadeIn().slideX(begin: -0.1, end: 0);
   }
 
-  Widget _buildTopStats() {
-    final stats = [
-      ('7,40,957', 'Cases Reported\n2023', AppColors.red),
-      ('₹1.77L Cr', 'At Risk\n(2027 est.)', AppColors.orange),
-      ('45%', 'Investment\nFraud Share', AppColors.blue),
+  Widget _buildTopStats(BuildContext context) {
+    final stats = <(String, String, Color)>[
+      ('36.4 lakh', 'Complaints\nin 2024', AppColors.red),
+      ('+206%', 'Rise in losses\nvs 2023', AppColors.orange),
       ('1930', 'National\nHelpline', AppColors.green),
+      ('cybercrime\n.gov.in', 'Report\nonline', AppColors.blue),
     ];
     return GridView.count(
       crossAxisCount: 2,
@@ -98,37 +132,178 @@ class DashboardScreen extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       children: stats.asMap().entries.map((e) {
         final s = e.value;
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border(left: BorderSide(color: s.$3, width: 3)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                s.$1,
-                style: GoogleFonts.inter(
-                  color: s.$3,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 15,
+        final isHelpline = s.$1 == '1930';
+        final isPortal = s.$1.startsWith('cybercrime');
+        return InkWell(
+          onTap: isHelpline
+              ? () => _open(context, 'tel:1930')
+              : isPortal
+                  ? () => _open(context, 'https://cybercrime.gov.in')
+                  : null,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border(left: BorderSide(color: s.$3, width: 3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  s.$1,
+                  style: GoogleFonts.inter(
+                    color: s.$3,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
                 ),
+                Text(
+                  s.$2,
+                  style: GoogleFonts.inter(
+                    color: AppColors.textMuted,
+                    fontSize: 10,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ).animate().fadeIn(delay: (80 * e.key).ms);
+      }).toList(),
+    );
+  }
+
+  List<Widget> _buildScamCards() {
+    final scams = <(String, String, Color)>[
+      (
+        'Fake internship offers',
+        'A "registration" or "security deposit" before joining, sent over '
+            'WhatsApp or a look-alike domain. Real employers pay you.',
+        AppColors.brand,
+      ),
+      (
+        'Digital arrest',
+        'A caller claiming to be police or CBI, on video, demanding money to '
+            'avoid arrest. No agency arrests anyone over a call.',
+        AppColors.red,
+      ),
+      (
+        'UPI and OTP fraud',
+        'A "refund" or "receive money" request that is actually a payment. '
+            'Nobody needs your UPI PIN to send you money.',
+        AppColors.orange,
+      ),
+      (
+        'Investment and task scams',
+        'Small payouts to build trust, then a large deposit that never comes '
+            'back. If you must pay to earn, it is not a job.',
+        AppColors.blue,
+      ),
+    ];
+
+    return scams.asMap().entries.map((e) {
+      final s = e.value;
+      return Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border(left: BorderSide(color: s.$3, width: 3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              s.$1,
+              style: GoogleFonts.inter(
+                color: AppColors.textPrim,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
               ),
-              Text(
-                s.$2,
-                style: GoogleFonts.inter(
-                  color: AppColors.textMuted,
-                  fontSize: 10,
-                  height: 1.3,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              s.$2,
+              style: GoogleFonts.inter(
+                color: AppColors.textSec,
+                fontSize: 12,
+                height: 1.45,
+              ),
+            ),
+          ],
+        ),
+      ).animate().fadeIn(delay: (60 * e.key).ms);
+    }).toList();
+  }
+
+  Widget _buildReportCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🚨', style: TextStyle(fontSize: 28)),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Got scammed? Report immediately.',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrim,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'The sooner you report, the better the chance of stopping '
+                      'the payment.',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textSec,
+                        fontSize: 11,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-        ).animate().fadeIn(delay: (80 * e.key).ms);
-      }).toList(),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _open(context, 'tel:1930'),
+                  icon: const Icon(Icons.call_outlined, size: 16),
+                  label: const Text('Call 1930'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _open(context, 'https://cybercrime.gov.in'),
+                  icon: const Icon(Icons.public, size: 16),
+                  label: const Text('Report online'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -141,233 +316,16 @@ class DashboardScreen extends StatelessWidget {
         ),
       );
 
-  Widget _buildPieChart() {
-    final data = [
-      ('Investment Fraud', 45.0, AppColors.blue),
-      ('Digital Arrest', 18.0, AppColors.red),
-      ('KYC / Bank', 15.0, AppColors.orange),
-      ('Lottery Scam', 12.0, AppColors.yellow),
-      ('Other', 10.0, AppColors.textMuted),
-    ];
-    return Container(
-      height: 200,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: PieChart(
-              PieChartData(
-                sections: data.map((d) => PieChartSectionData(
-                  value: d.$2,
-                  color: d.$3,
-                  radius: 60,
-                  showTitle: false,
-                )).toList(),
-                sectionsSpace: 2,
-                centerSpaceRadius: 30,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: data.map((d) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
-                children: [
-                  Container(
-                    width: 8, height: 8,
-                    decoration: BoxDecoration(color: d.$3, shape: BoxShape.circle),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${d.$1} ${d.$2.toInt()}%',
-                    style: GoogleFonts.inter(
-                      color: AppColors.textSec,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            )).toList(),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 100.ms);
-  }
-
-  Widget _buildBarChart() {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    final values = [42.0, 55.0, 48.0, 70.0, 65.0, 88.0];
-
-    return Container(
-      height: 180,
-      padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: BarChart(
-        BarChartData(
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            getDrawingHorizontalLine: (_) => const FlLine(
-              color: AppColors.border,
-              strokeWidth: 1,
-            ),
-          ),
-          titlesData: FlTitlesData(
-            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (v, _) => Text(
-                  months[v.toInt()],
-                  style: GoogleFonts.inter(
-                    color: AppColors.textMuted,
-                    fontSize: 10,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          borderData: FlBorderData(show: false),
-          barGroups: values.asMap().entries.map((e) => BarChartGroupData(
-            x: e.key,
-            barRods: [
-              BarChartRodData(
-                toY: e.value,
-                gradient: const LinearGradient(
-                  colors: [AppColors.brand, AppColors.orange],
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                ),
-                width: 22,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-              ),
-            ],
-          )).toList(),
-        ),
-      ),
-    ).animate().fadeIn(delay: 150.ms);
-  }
-
-  Widget _buildStateList() {
-    final states = [
-      ('Maharashtra', '1,40,812', 0.9),
-      ('Uttar Pradesh', '98,545', 0.75),
-      ('Rajasthan', '87,231', 0.65),
-      ('Telangana', '72,114', 0.55),
-      ('Tamil Nadu', '65,890', 0.48),
-    ];
-    return Column(
-      children: states.asMap().entries.map((e) {
-        final s = e.value;
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              Text(
-                '${e.key + 1}',
-                style: GoogleFonts.inter(
-                  color: AppColors.textMuted,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      s.$1,
-                      style: GoogleFonts.inter(
-                        color: AppColors.textPrim,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    LinearProgressIndicator(
-                      value: s.$3,
-                      backgroundColor: AppColors.border,
-                      color: AppColors.brand,
-                      minHeight: 4,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                s.$2,
-                style: GoogleFonts.inter(
-                  color: AppColors.textSec,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ).animate().fadeIn(delay: (60 * e.key).ms);
-      }).toList(),
+  Future<void> _open(BuildContext context, String url) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
     );
-  }
-
-  Widget _buildReportCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          const Text('🚨', style: TextStyle(fontSize: 28)),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Got scammed? Report immediately.',
-                  style: GoogleFonts.inter(
-                    color: AppColors.textPrim,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'National Helpline: 1930 | Cybercrime: cybercrime.gov.in',
-                  style: GoogleFonts.inter(
-                    color: AppColors.textSec,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    if (!ok) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Could not open $url')),
+      );
+    }
   }
 }

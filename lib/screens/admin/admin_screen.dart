@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../main.dart' show AppColors;
 import '../../services/api_service.dart';
-import '../reports/reports_screen.dart' show kScamCategories;
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -339,7 +338,7 @@ class _ScamDbTabState extends State<_ScamDbTab> {
                       const SizedBox(width: 10),
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(e['value'], style: GoogleFonts.inter(color: AppColors.textPrim, fontWeight: FontWeight.w600, fontSize: 13)),
-                        Text('${e['entry_type']} • ${e['category']} • ${e['source']}', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11)),
+                        Text('${e['entry_type']} â€¢ ${e['category']} â€¢ ${e['source']}', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11)),
                       ])),
                       IconButton(icon: const Icon(Icons.delete_outline, color: AppColors.textMuted, size: 20), onPressed: () => _delete(e['id'])),
                     ]),

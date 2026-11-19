@@ -22,7 +22,8 @@ def gen_id() -> str:
 
 
 def now() -> dt.datetime:
-    return dt.datetime.utcnow()
+    # Naive UTC to match the DateTime columns; avoids the deprecated utcnow().
+    return dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
 
 
 # ── Phase 1: Users / Auth / Profile ─────────────────────────────────────────
@@ -57,6 +58,12 @@ class User(Base):
     history = relationship("ScanHistory", back_populates="user", cascade="all, delete-orphan")
     reports = relationship("ScamReport", back_populates="reporter", cascade="all, delete-orphan")
     sessions = relationship("Session", back_populates="user", cascade="all, delete-orphan")
+    internship_feedback = relationship(
+        "InternshipFeedback", back_populates="user", cascade="all, delete-orphan"
+    )
+    receipts = relationship(
+        "OfferReceipt", backref="user", cascade="all, delete-orphan"
+    )
 
 
 class Session(Base):
@@ -222,6 +229,64 @@ class Notification(Base):
     kind = Column(String, default="alert")  # alert | weekly_summary | family | system
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=now)
+
+
+# ── Internship pilot: ground-truth feedback ────────────────────────────────
+class InternshipFeedback(Base):
+    """A student's correction of a verifier verdict.
+
+    This is the pilot's measurement layer: it pairs what the verifier said
+    (predicted) with what the student knows to be true (actual). Without it
+    the only claim we can make is "the unit tests pass"; with it we can report
+    precision and recall on real Indian internship offers.
+
+    The offer text itself is never stored here - only a salted-free SHA-256
+    hash, so a row cannot be reversed into the student's message.
+    """
+    __tablename__ = "internship_feedback"
+
+    id = Column(String, primary_key=True, default=gen_id)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    history_id = Column(String, ForeignKey("scan_history.id"), nullable=True)
+
+    offer_hash = Column(String, index=True, default="")
+    predicted_verdict = Column(String, default="")
+    predicted_score = Column(Integer, default=0)
+
+    actual_verdict = Column(String, nullable=False)  # genuine | scam | unsure
+    reason = Column(String, default="")
+    notes = Column(Text, default="")
+
+    created_at = Column(DateTime, default=now)
+
+    user = relationship("User", back_populates="internship_feedback")
+
+
+# ── Verified offer receipts (tamper-evident, revocable) ────────────────────
+class OfferReceipt(Base):
+    """A signed record of one internship verification.
+
+    The signature lives outside the row (recomputed on read), so the row is
+    just the source data. Revocation is a first-class state, not a delete:
+    a revoked receipt still resolves, and says why.
+    """
+    __tablename__ = "offer_receipts"
+
+    id = Column(String, primary_key=True)  # NS-XXXXXXXXXX
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+
+    offer_hash = Column(String, index=True, default="")
+    verdict = Column(String, default="")
+    risk_score = Column(Integer, default=0)
+    employer_domain = Column(String, default="")
+    company_verified = Column(Boolean, default=False)
+    evidence = Column(JSON, default=list)
+    signature = Column(String, default="")  # HMAC over the fields above
+
+    issued_at = Column(DateTime, default=now)
+    revoked = Column(Boolean, default=False)
+    revoked_reason = Column(String, default="")
+    revoked_at = Column(DateTime, nullable=True)
 
 
 # ── Phase 7: External Integration Cache (optional enrichment results) ──────

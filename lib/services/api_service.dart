@@ -401,6 +401,40 @@ class ApiService extends ChangeNotifier {
     return _decodeOrThrow(response) as Map<String, dynamic>;
   }
 
+  /// Report what actually happened, so pilot accuracy can be measured.
+  Future<void> submitInternshipFeedback({
+    required String offerText,
+    required String predictedVerdict,
+    required int predictedScore,
+    required String actualVerdict,
+    String? historyId,
+    String reason = '',
+    String notes = '',
+  }) async {
+    final response = await _authedRequest(() => http.post(
+          Uri.parse('$_BASE_URL/analyze/internship/feedback'),
+          headers: _authHeaders,
+          body: jsonEncode({
+            'offer_text': offerText,
+            'history_id': historyId,
+            'predicted_verdict': predictedVerdict,
+            'predicted_score': predictedScore,
+            'actual_verdict': actualVerdict,
+            'reason': reason,
+            'notes': notes,
+          }),
+        ).timeout(const Duration(seconds: 20)));
+    _decodeOrThrow(response);
+  }
+
+  /// Fetch a public verification receipt. No auth: placement cells need it.
+  Future<Map<String, dynamic>> getReceipt(String receiptId) async {
+    final response = await http
+        .get(Uri.parse('$_BASE_URL/receipt/$receiptId'))
+        .timeout(const Duration(seconds: 20));
+    return _decodeOrThrow(response) as Map<String, dynamic>;
+  }
+
   // ── Counterfeit Currency Detection ────────────────────────────────────────
   Future<CurrencyAnalysisResult> analyzeCurrency(Uint8List bytes, {String language = 'en'}) async {
     final base64Image = base64Encode(bytes);

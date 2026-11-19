@@ -139,6 +139,28 @@ class InternshipAnalysisRequest(BaseModel):
     language: str = "en"
 
 
+class InternshipFeedbackRequest(BaseModel):
+    """A student telling us the verifier got it wrong (or right).
+
+    `actual_verdict` is the ground truth for the pilot's accuracy numbers.
+    `offer_text` is hashed server-side and never stored in clear text.
+    """
+    offer_text: str = ""
+    history_id: str | None = None
+    predicted_verdict: str = ""
+    predicted_score: int = 0
+    actual_verdict: str  # genuine | scam | unsure
+    reason: str = ""
+    notes: str = ""
+
+
+class ReceiptRevokeRequest(BaseModel):
+    """Revoke one receipt, or every receipt issued for the same offer."""
+    receipt_id: str | None = None
+    offer_hash: str | None = None
+    reason: str = ""
+
+
 class ReportReviewRequest(BaseModel):
     status: str  # verified | rejected
     admin_notes: str = ""
