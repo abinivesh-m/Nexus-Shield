@@ -41,16 +41,16 @@ corresponding feature returns `503` rather than leaking data.
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Email delivery for OTPs and reset links | Brevo (300/day free) or Gmail app password |
 | `FAST2SMS_API_KEY` | SMS delivery for OTPs (India) | Fast2SMS free trial |
 
-## What you must rotate (do this now)
+## Secret rotation policy
 
-These were exposed in earlier chat logs and must be treated as compromised:
+Every credential is issued, stored, and rotated through the provider console.
+No credential value is ever written into this repository, a document, a commit
+message, or a chat log — this file lists only the variable names.
 
-- Gemini key `***REMOVED-SECRET***` / `***REMOVED-SECRET***`
-- Firebase key `***REMOVED-SECRET***`
-- Neon password `***REMOVED-SECRET***`
-- HuggingFace token `***REMOVED-SECRET***`
-
-Rotate each in its provider console, then update the Vercel env vars.
+If a secret is ever exposed, the order is: rotate at the provider, update the
+Vercel environment variable, redeploy, then verify the old value is rejected.
+`JWT_SECRET` and `RECEIPT_SECRET` are independent values; rotating one must not
+invalidate the other.
 
 ## What is deliberately NOT in this pilot
 
@@ -62,4 +62,3 @@ Rotate each in its provider console, then update the Vercel env vars.
 ## Reporting a vulnerability
 
 Email abinivesh.1203@gmail.com. We will acknowledge within 72 hours.
-PY
