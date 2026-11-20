@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session as DBSession
 
 from ..database import get_db
 from .. import models, schemas
+from .. import receipts as receipts_mod
 from ..deps import get_current_admin
 from ..scam_db import severity_to_risk_score
 
@@ -291,6 +292,27 @@ def revoke_receipts(
     db.commit()
 
     return {"revoked": len(rows), "reason": rows[0].revoked_reason}
+
+
+@router.post("/receipts/resign")
+def resign_receipts(
+    admin: models.User = Depends(get_current_admin),
+    db: DBSession = Depends(get_db),
+):
+    """One-time maintenance: re-sign every receipt with the current secret.
+
+    Needed after rotating RECEIPT_SECRET so that existing rows keep a valid
+    signature. Remove this endpoint once the migration has run.
+    """
+    rows = db.query(models.OfferReceipt).all()
+    for row in rows:
+        payload = receipts_mod.build_payload(
+            row.id, row.issued_at, row.verdict, row.risk_score,
+            row.employer_domain, row.company_verified, row.offer_hash,
+        )
+        row.signature = receipts_mod.sign(payload)
+    db.commit()
+    return {"resigned": len(rows)}
 
 
 # ── Platform-wide analytics ──────────────────────────────────────────────────
